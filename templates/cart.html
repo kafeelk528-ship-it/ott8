@@ -1,44 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Cart — OTT Store{% endblock %}
+{% block title %}Your Cart{% endblock %}
+
 {% block content %}
-<section class="cart-page">
-  <h2>Your Cart</h2>
+<h1>Your Cart</h1>
 
-  {% if cart|length == 0 %}
-    <div class="card">Your cart is empty. <a href="{{ url_for('plans_page') }}" class="btn primary">Browse Plans</a></div>
-  {% else %}
-    <div class="cart-grid">
-      <div class="cart-items">
-        {% for it in cart %}
-          <div class="cart-row card">
-            <img src="{{ url_for('static', filename='ott/' ~ it['logo']) }}" alt="{{ it['name'] }}" class="cart-logo">
-            <div class="cart-meta">
-              <h4>{{ it['name'] }}</h4>
-              <div class="muted">₹{{ it['price'] }}</div>
-              <div class="muted small">Available: {{ it['qty'] }}</div>
-            </div>
-            <div class="cart-right">
-              <div class="item-total">₹{{ it['price'] }}</div>
-              <a class="btn small ghost" href="{{ url_for('remove_cart', plan_id=it['id']) }}">Remove</a>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
+{% if cart %}
+<table class="cart-table">
+    <tr>
+        <th>Plan</th>
+        <th>Price</th>
+        <th></th>
+    </tr>
 
-      <aside class="cart-summary card">
-        <h3>Order Summary</h3>
-        <div class="muted">Subtotal</div>
-        <div class="summary-amount">₹{{ total }}</div>
-        <div style="margin-top:16px">
-          <form method="post" action="{{ url_for('checkout') }}">
-            <button class="btn primary" type="submit">Proceed to Checkout</button>
-          </form>
-        </div>
-        <div style="margin-top:8px">
-          <a class="btn ghost" href="{{ url_for('plans_page') }}">Continue Shopping</a>
-        </div>
-      </aside>
-    </div>
-  {% endif %}
-</section>
+    {% for item in cart %}
+    <tr>
+        <td>{{ item.name }}</td>
+        <td>₹{{ item.price }}</td>
+        <td><a href="{{ url_for('remove_cart', plan_id=item.id) }}" class="btn small danger">Remove</a></td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>Total: ₹{{ total }}</h2>
+
+<a class="btn primary" href="{{ url_for('checkout') }}">Proceed to Checkout</a>
+
+{% else %}
+<p>Your cart is empty.</p>
+{% endif %}
 {% endblock %}
