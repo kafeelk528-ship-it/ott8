@@ -1,3 +1,12 @@
+# app.py
+# Complete Flask app for OTT demo:
+# - SQLite persistence (plans + orders)
+# - Cart, checkout (reduces stock)
+# - Manual QR payment flow (submit UTR)
+# - Telegram notify on UTR submission
+# - Admin panel to CRUD plans and approve orders (sends email)
+# - Reads secrets from environment variables (do NOT hardcode secrets)
+
 import os
 import sqlite3
 import requests
@@ -11,14 +20,16 @@ from flask import (
 )
 
 # -------------------------
-# App + config
+# App config
 # -------------------------
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
+
+# Database file path
 DB_PATH = os.path.join(os.path.dirname(__file__), "ott.db")
 
 # -------------------------
-# DB helpers
+# Database helpers
 # -------------------------
 def get_db():
     db = getattr(g, "_db", None)
@@ -37,7 +48,6 @@ def init_db():
     conn = get_db()
     cur = conn.cursor()
 
-    # plans table
     cur.execute("""
     CREATE TABLE IF NOT EXISTS plans (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,7 +58,7 @@ def init_db():
         qty INTEGER NOT NULL DEFAULT 0
     )
     """)
-    # orders table
+
     cur.execute("""
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,14 +67,14 @@ def init_db():
         buyer_email TEXT,
         utr TEXT,
         amount INTEGER,
-        status TEXT DEFAULT 'pending',
+        status TEXT DEFAULT 'pending',   -- pending, approved, rejected
         created_at TEXT DEFAULT (datetime('now')),
         approved_at TEXT
     )
     """)
     conn.commit()
 
-    # seed plans if empty
+    # seed sample plans if empty
     cur.execute("SELECT COUNT(1) as cnt FROM plans")
     if cur.fetchone()["cnt"] == 0:
         default = [
@@ -84,10 +94,11 @@ with app.app_context():
     init_db()
 
 # -------------------------
-# Admin auth + env
+# Admin auth & env vars
 # -------------------------
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "12345")
+YOUR_DOMAIN = os.environ.get("YOUR_DOMAIN", "").rstrip("/")
 
 def admin_required(f):
     @wraps(f)
@@ -98,7 +109,7 @@ def admin_required(f):
     return wrapped
 
 # -------------------------
-# plans helpers
+# Plans helpers (CRUD)
 # -------------------------
 def query_plans():
     conn = get_db()
@@ -154,7 +165,7 @@ def delete_plan(plan_id):
     conn.commit()
 
 # -------------------------
-# orders helpers
+# Orders helpers
 # -------------------------
 def create_order(plan_id, buyer_name, buyer_email, utr, amount):
     conn = get_db()
@@ -192,11 +203,11 @@ def set_order_status(order_id, status):
         cur.execute("UPDATE orders SET status=? WHERE id=?", (status, order_id))
     conn.commit()
 
-# expose helpers to templates
+# expose small helpers to templates
 app.jinja_env.globals.update(query_orders=query_orders, get_plan=get_plan)
 
 # -------------------------
-# telegram notify
+# Telegram notify
 # -------------------------
 def send_telegram_notification(order):
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -206,8 +217,7 @@ def send_telegram_notification(order):
         return False
 
     plan = get_plan(order["plan_id"])
-    domain = os.environ.get("YOUR_DOMAIN", "").rstrip("/")
-    approve_url = f"{domain}/admin/order/{order['id']}/approve" if domain else ""
+    approve_url = f"{YOUR_DOMAIN}/admin/order/{order['id']}/approve" if YOUR_DOMAIN else ""
     text = (
         f"📥 New Payment Submission\n"
         f"Order ID: {order['id']}\n"
@@ -217,7 +227,7 @@ def send_telegram_notification(order):
         f"UTR: {order.get('utr','-')}\n"
         f"Status: {order.get('status')}\n"
         f"Time: {order.get('created_at')}\n\n"
-        f"Approve URL: {approve_url}"
+        f"Approve: {approve_url}"
     )
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": text}
@@ -230,7 +240,7 @@ def send_telegram_notification(order):
         return False
 
 # -------------------------
-# email sender (SMTP)
+# Email sender (SMTP)
 # -------------------------
 def send_plan_email(buyer_email, subject, body, attachments=None):
     smtp_host = os.environ.get("SMTP_HOST")
@@ -266,7 +276,7 @@ def send_plan_email(buyer_email, subject, body, attachments=None):
         return False
 
 # -------------------------
-# Public routes
+# Public routes (store)
 # -------------------------
 @app.route("/")
 def home():
@@ -285,7 +295,7 @@ def plan_details(plan_id):
         abort(404)
     return render_template("plan-details.html", plan=p)
 
-# add-to-cart / cart / remove
+# Cart
 @app.route("/add-to-cart/<int:plan_id>")
 def add_to_cart(plan_id):
     plan = get_plan(plan_id)
@@ -322,7 +332,7 @@ def remove_cart(plan_id):
         flash("Removed from cart", "info")
     return redirect(url_for("cart_page"))
 
-# checkout: GET shows, POST performs (reduce qty by 1 per item)
+# Checkout (demo) - POST reduces qty by 1 per item
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
     if request.method == "POST":
@@ -359,7 +369,7 @@ def contact_page():
     return render_template("contact.html")
 
 # -------------------------
-# Manual payment (QR + UTR)
+# Manual bank/QR payment flow
 # -------------------------
 @app.route("/pay_manual/<int:plan_id>", methods=["GET"])
 def pay_manual(plan_id):
@@ -388,14 +398,14 @@ def submit_utr():
     order_id = create_order(plan_id, buyer_name, buyer_email, utr, plan["price"])
     order = get_order(order_id)
 
-    # notify via telegram
+    # notify owner via Telegram
     send_telegram_notification(order)
 
     flash("UTR submitted — owner will check and approve shortly.", "success")
     return render_template("utr_submitted.html", order=order, plan=plan)
 
 # -------------------------
-# Admin routes and orders
+# Admin UI & actions
 # -------------------------
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
@@ -466,7 +476,7 @@ def admin_approve_order(order_id):
     # mark approved
     set_order_status(order_id, "approved")
 
-    # send plan by email to buyer
+    # send plan email to buyer
     plan = get_plan(order["plan_id"])
     subject = f"Your {plan['name']} — Access / Receipt"
     body = f"""
@@ -494,7 +504,8 @@ def admin_order_json(order_id):
     return jsonify(o)
 
 # -------------------------
-# Run
+# Run server
 # -------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    # debug True only for local usage
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
