@@ -1,0 +1,78 @@
+@app.route("/submit-utr", methods=["POST"])
+def submit_utr():
+    try:
+        # Read & validate form fields
+        utr = (request.form.get("utr") or "").strip()
+        buyer_name = (request.form.get("buyer_name") or "").strip()
+        buyer_email = (request.form.get("buyer_email") or "").strip()
+
+        if not utr:
+            flash("Please enter a UTR number.", "danger")
+            return redirect(url_for("checkout_qr"))
+
+        # Get cart items
+        cart = session.get("cart", [])
+        cart_items = [get_plan(pid) for pid in cart]
+        cart_items = [c for c in cart_items if c]
+        if not cart_items:
+            flash("Your cart is empty.", "info")
+            return redirect(url_for("plans_page"))
+
+        total = sum(int(item.get("price", 0)) for item in cart_items)
+        items_text = ", ".join([item.get("name", "-") for item in cart_items])
+
+        # Build a message for Telegram and logs
+        message = (
+            f"*New Payment Submission*\n"
+            f"Items: {items_text}\n"
+            f"Amount: ₹{total}\n"
+            f"UTR: `{utr}`\n"
+            f"Buyer: {buyer_name or '-'} ({buyer_email or '-'})\n"
+            f"Time: {datetime.utcnow().isoformat()} UTC"
+        )
+
+        # Try sending Telegram notification (if configured)
+        telegram_ok = False
+        try:
+            telegram_ok = send_telegram_notification(message)
+        except Exception as e:
+            app.logger.exception("Telegram notify threw inside submit_utr: %s", e)
+
+        # Persist submission for audit
+        submission = {
+            "utr": utr,
+            "buyer_name": buyer_name,
+            "buyer_email": buyer_email,
+            "items": [{"id": i.get("id"), "name": i.get("name"), "price": i.get("price")} for i in cart_items],
+            "total": total,
+            "telegram_sent": bool(telegram_ok),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+        try:
+            existing = []
+            if os.path.exists(SUBMISSIONS_FILE):
+                with open(SUBMISSIONS_FILE, "r", encoding="utf-8") as f:
+                    existing = json.load(f) or []
+            existing.append(submission)
+            with open(SUBMISSIONS_FILE, "w", encoding="utf-8") as f:
+                json.dump(existing, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            # Log but do not fail the user flow if saving fails
+            app.logger.exception("Failed to persist submission to %s: %s", SUBMISSIONS_FILE, e)
+
+        # Clear the cart and show success page
+        session.pop("cart", None)
+        flash("UTR submitted for verification. Owner will verify and deliver.", "success")
+        return render_template("success.html")
+
+    except Exception as e:
+        # Catch-all: log full traceback and notify owner if possible
+        app.logger.exception("submit_utr failed: %s", e)
+        flash("An unexpected server error occurred while submitting your payment. The owner has been notified.", "danger")
+        try:
+            err_text = f"⚠️ submit_utr failed on server:\n{str(e)}\nTime: {datetime.utcnow().isoformat()}"
+            send_telegram_notification(err_text)
+        except Exception:
+            app.logger.debug("Failed to send error notification to Telegram.")
+        return redirect(url_for("checkout_qr"))
