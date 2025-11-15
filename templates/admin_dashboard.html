@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<section>
+  <h2>Admin Dashboard</h2>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, m in messages %}
+        <div class="flash {{ cat }}">{{ m }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <h3 style="margin-top:18px">Existing Plans</h3>
+  <div class="grid">
+    {% for p in plans %}
+      <div class="card">
+        <form action="{{ url_for('admin_update_plan', plan_id=p['id']) }}" method="post">
+          <div style="display:flex;gap:12px;align-items:center;">
+            <img src="{{ url_for('static', filename='ott/' ~ p['logo']) }}" style="width:76px;height:76px;object-fit:contain;border-radius:8px;">
+            <div style="flex:1">
+              <input name="name" value="{{ p['name'] }}" placeholder="Name" style="width:100%;padding:8px;margin-bottom:6px;">
+              <input name="logo" value="{{ p['logo'] }}" placeholder="Logo filename (static/ott/...)" style="width:100%;padding:8px;margin-bottom:6px;">
+              <input name="description" value="{{ p['description'] }}" placeholder="Description" style="width:100%;padding:8px;margin-bottom:6px;">
+            </div>
+            <div style="width:140px">
+              <label>Price (₹)</label>
+              <input name="price" type="number" value="{{ p['price'] }}" style="width:100%;padding:8px;margin-bottom:6px;">
+              <label>Qty</label>
+              <input name="qty" type="number" value="{{ p['qty'] }}" style="width:100%;padding:8px;margin-bottom:6px;">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button class="btn primary" type="submit">Save</button>
+
+            <form action="{{ url_for('admin_delete_plan', plan_id=p['id']) }}" method="post" style="display:inline;">
+              <button class="btn ghost" type="submit" onclick="return confirm('Delete plan?')">Delete</button>
+            </form>
+          </div>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h3 style="margin-top:22px">Add New Plan</h3>
+  <div class="card">
+    <form action="{{ url_for('admin_add_plan') }}" method="post" style="display:flex;gap:12px;flex-wrap:wrap;">
+      <input name="name" placeholder="Name" required style="padding:8px;min-width:220px;">
+      <input name="price" type="number" placeholder="Price (₹)" required style="padding:8px;width:140px;">
+      <input name="qty" type="number" placeholder="Quantity" required style="padding:8px;width:120px;">
+      <input name="logo" placeholder="logo filename (ott/xxx.png)" style="padding:8px;min-width:160px;">
+      <input name="description" placeholder="Short description" style="padding:8px;flex:1;">
+      <div style="width:100%;margin-top:8px;">
+        <button class="btn primary" type="submit">Add Plan</button>
+      </div>
+    </form>
+  </div>
+
+  <div style="margin-top:20px;">
+    <a class="btn ghost" href="{{ url_for('admin_logout') }}">Logout</a>
+  </div>
+</section>
+{% endblock %}
