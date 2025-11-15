@@ -1,30 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Plans — OTT Store{% endblock %}
+
+{% block title %}All Plans{% endblock %}
+
 {% block content %}
-<section class="plans-list">
-  <h2>All Plans</h2>
+<h1 class="page-title">All OTT Plans</h1>
 
-  <div class="grid">
-    {% for p in plans %}
-    <div class="product-card">
-      <div class="card-top">
-        <img class="provider" src="{{ url_for('static', filename='ott/' ~ p['logo']) }}" alt="{{ p['name'] }}">
-        <div class="price">₹{{ p['price'] }}</div>
-      </div>
-      <h3>{{ p['name'] }}</h3>
-      <p class="muted">{{ p.get('description', '') }}</p>
-      <p class="muted small">Available: {{ p['qty'] }}</p>
-
-      {% if p['qty'] <= 0 %}
-        <span class="stock-badge out">OUT OF STOCK</span>
-      {% endif %}
-
-      <div class="card-actions">
-        <a class="btn outlined" href="{{ url_for('plan_details', plan_id=p['id']) }}">Details</a>
-        <a class="btn primary {% if p['qty'] <= 0 %}disabled{% endif %}" href="{% if p['qty'] > 0 %}{{ url_for('add_to_cart', plan_id=p['id']) }}{% else %}#{% endif %}">Add to Cart</a>
-      </div>
+<div class="plans-grid">
+{% for p in plans %}
+    <div class="card">
+        <img src="{{ url_for('static', filename='img/' + p.logo) }}" class="logo-img">
+        <h3>{{ p.name }}</h3>
+        <p>{{ p.desc }}</p>
+        <p><b>₹{{ p.price }}</b></p>
+        <p class="stock">Available: {{ p.stock }}</p>
+        <a class="btn" href="{{ url_for('plan_details', plan_id=p.id) }}">Details</a>
     </div>
-    {% endfor %}
-  </div>
-</section>
+{% endfor %}
+</div>
 {% endblock %}
