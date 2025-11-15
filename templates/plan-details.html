@@ -1,27 +1,15 @@
 {% extends "base.html" %}
-{% block title %}{{ plan.name }} — Details{% endblock %}
+{% block title %}{{ plan.name }}{% endblock %}
+
 {% block content %}
-<section class="plan-details">
-  <div class="detail-left">
-    <img src="{{ url_for('static', filename='ott/' ~ plan['logo']) }}" alt="{{ plan['name'] }}" class="detail-logo">
-  </div>
+<div class="details-box">
+    <img src="{{ url_for('static', filename='img/' + plan.logo) }}" class="details-logo">
+    <h1>{{ plan.name }}</h1>
+    <p>{{ plan.desc }}</p>
 
-  <div class="detail-right">
-    <h1>{{ plan['name'] }}</h1>
-    <div class="price-large">₹{{ plan['price'] }}</div>
-    <p class="muted">{{ plan.get('description','') }}</p>
+    <h2>Price: ₹{{ plan.price }}</h2>
+    <p class="stock">Available: {{ plan.stock }}</p>
 
-    <p><strong>Available Items:</strong> {{ plan['qty'] }}</p>
-    {% if plan['qty'] <= 0 %}
-      <span class="stock-badge out">OUT OF STOCK</span>
-    {% endif %}
-
-    <div class="detail-actions" style="margin-top:16px;">
-      <a class="btn outlined" href="{{ url_for('add_to_cart', plan_id=plan['id']) if plan['qty']>0 else '#' }}">Add to Cart</a>
-      <form method="post" action="{{ url_for('checkout') }}" style="display:inline;">
-        <button class="btn primary" type="submit" {% if plan['qty']<=0 %}disabled{% endif %}>Buy Now (Demo)</button>
-      </form>
-    </div>
-  </div>
-</section>
+    <a class="btn primary" href="{{ url_for('add_to_cart', plan_id=plan.id) }}">Add to Cart</a>
+</div>
 {% endblock %}
