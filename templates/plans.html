@@ -12,7 +12,7 @@
         <div class="price">₹{{ p['price'] }}</div>
       </div>
       <h3>{{ p['name'] }}</h3>
-      <p class="muted">30 day demo • instant delivery</p>
+      <p class="muted">{{ p.get('desc', '') }}</p>
 
       <div class="card-actions">
         <a class="btn outlined" href="{{ url_for('plan_details', plan_id=p['id']) }}">Details</a>
