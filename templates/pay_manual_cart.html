@@ -1,44 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Manual Payment for Cart{% endblock %}
+{% block title %}Pay via QR{% endblock %}
+
 {% block content %}
-<section style="max-width:920px;margin:auto;">
-  <h2>Pay via Bank / QR</h2>
-  <div class="card" style="display:flex;gap:20px;align-items:flex-start;">
-    <div style="flex:0 0 260px;text-align:center;">
-      <p>Scan this QR with your bank app and pay the total amount.</p>
-      <img src="{{ qr_path }}" alt="QR" style="width:220px;height:220px;">
-      <p class="muted">Amount: <strong>₹{{ total }}</strong></p>
-    </div>
+<h1>Scan & Pay</h1>
 
-    <div style="flex:1;">
-      <h3>Order Summary</h3>
-      <ul>
-        {% for item in cart %}
-          <li style="display:flex;justify-content:space-between;padding:6px 0;">
-            <div>
-              <strong>{{ item.name }}</strong>
-              <div class="muted">{{ item.description or '' }}</div>
-            </div>
-            <div>₹{{ item.price }}</div>
-          </li>
-        {% endfor %}
-      </ul>
+<img src="{{ qr_path }}" class="qr-img">
 
-      <hr>
-      <h4>After making the bank transfer</h4>
-      <p>Enter one UTR / Transaction ID for the whole order and your email so we can contact you.</p>
+<h3>Total: ₹{{ total }}</h3>
 
-      <form action="{{ url_for('submit_utr') }}" method="post" style="max-width:560px;">
-        <input type="hidden" name="cart_mode" value="1">
-        <input name="buyer_name" placeholder="Your name" required style="width:100%;padding:10px;margin-bottom:8px;">
-        <input name="buyer_email" placeholder="Your email" required style="width:100%;padding:10px;margin-bottom:8px;">
-        <input name="utr" placeholder="UTR / Transaction ID" required style="width:100%;padding:10px;margin-bottom:8px;">
-        <div style="display:flex;gap:8px;">
-          <button class="btn primary" type="submit">Submit UTR</button>
-          <a class="btn ghost" href="{{ url_for('cart_page') }}">Cancel</a>
-        </div>
-      </form>
-    </div>
-  </div>
-</section>
+<form action="{{ url_for('submit_utr') }}" method="POST">
+    <label>Enter UTR Number:</label>
+    <input type="text" name="utr" placeholder="Enter UTR" required class="input">
+    <button type="submit" class="btn primary">Submit Payment</button>
+</form>
+
 {% endblock %}
