@@ -16,7 +16,7 @@ SUBMISSIONS_FILE = os.path.join(os.path.dirname(__file__), "submissions.json")
 
 # Telegram config (optional)
 TELEGRAM_BOT_TOKEN = os.getenv("8162787624:AAGlBqWs32zSKFd76PNXjBT-e66Y9mh0nY4", "")
-TELEGRAM_CHAT_ID = os.getenv("946189130", "")
+TELEGRAM_CHAT_ID = os.getenv("1857783746", "")
 
 # Admin credentials from env (fallback defaults)
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
@@ -365,4 +365,5 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     debug = os.getenv("FLASK_ENV", "").lower() != "production"
     app.run(host="0.0.0.0", port=port, debug=debug)
+
 
