@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Cart — OTT Store{% endblock %}
+{% block content %}
+<section class="cart-page">
+  <h2>Your Cart</h2>
+
+  {% if items|length == 0 %}
+    <div class="card">Your cart is empty. <a href="{{ url_for('show_plans') }}" class="btn primary">Browse Plans</a></div>
+  {% else %}
+    <div class="cart-grid">
+      <div class="cart-items">
+        {% for it in items %}
+          <div class="cart-row card">
+            <img src="{{ url_for('static', filename='ott/' ~ it.logo) }}" alt="{{ it.name }}" class="cart-logo">
+            <div class="cart-meta">
+              <h4>{{ it.name }}</h4>
+              <div class="muted">₹{{ it.price }} × {{ it.qty }}</div>
+            </div>
+            <div class="cart-right">
+              <div class="item-total">₹{{ it.total }}</div>
+              <a class="btn small ghost" href="{{ url_for('remove_from_cart', plan_id=it.id) }}">Remove</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <aside class="cart-summary card">
+        <h3>Order Summary</h3>
+        <div class="muted">Subtotal</div>
+        <div class="summary-amount">₹{{ total }}</div>
+        <div style="margin-top:16px">
+          <a class="btn primary" href="{{ url_for('checkout') }}">Proceed to Checkout</a>
+        </div>
+        <div style="margin-top:8px">
+          <a class="btn ghost" href="{{ url_for('clear_cart') }}">Clear Cart</a>
+        </div>
+      </aside>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ plan.name }} — Details{% endblock %}
+{% block content %}
+<section class="plan-details">
+  <div class="detail-left">
+    <img src="{{ url_for('static', filename='ott/' ~ plan['logo']) }}" alt="{{ plan['name'] }}" class="detail-logo">
+  </div>
+
+  <div class="detail-right">
+    <h1>{{ plan['name'] }}</h1>
+    <div class="price-large">₹{{ plan['price'] }}</div>
+    <p class="muted">30 day subscription (demo) • Instant demo delivery</p>
+
+    <div class="detail-actions">
+      <a class="btn outlined" href="{{ url_for('add_to_cart', plan_id=plan['id']) }}">Add to Cart</a>
+      <a class="btn primary" href="{{ url_for('create_checkout_session', plan_id=plan['id']) }}">Buy Now</a>
+    </div>
+
+    <div class="features">
+      <h3>What's included</h3>
+      <ul>
+        <li>Instant demo confirmation</li>
+        <li>Valid for 30 days</li>
+        <li>Works across devices (concept demo)</li>
+        <li>No actual content streaming included — demo only</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
