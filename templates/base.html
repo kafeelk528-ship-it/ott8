@@ -4,10 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}OTT Store{% endblock %}</title>
-
-  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style-dark.css') }}">
-  <!-- small icon -->
   <link rel="icon" href="{{ url_for('static', filename='img/logo-dark.png') }}">
 </head>
 <body>
@@ -31,7 +28,7 @@
           <span class="cart-count">{{ session.get('cart')|length if session.get('cart') else 0 }}</span>
         </a>
 
-        {% if session.get('admin') %}
+        {% if session.get('is_admin') %}
           <a class="btn small" href="{{ url_for('admin_dashboard') }}">Admin</a>
         {% else %}
           <a class="btn small" href="{{ url_for('admin_login') }}">Admin Login</a>
@@ -41,6 +38,15 @@
   </header>
 
   <main class="container site-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-area">
+          {% for cat, m in messages %}
+            <div class="flash {{ cat }}">{{ m }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
     {% block content %}{% endblock %}
   </main>
 
@@ -55,7 +61,6 @@
     </div>
   </footer>
 
-  <!-- Font Awesome (icons) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
