@@ -1,9 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Payment Successful{% endblock %}
+{% block title %}Success{% endblock %}
 {% block content %}
-<div class="card success-box">
-  <h2>Payment successful</h2>
-  <p class="muted">Thank you — your order is recorded (demo). You can download your invoice from your dashboard after login.</p>
-  <a class="btn primary" href="{{ url_for('show_plans') }}">Back to Plans</a>
+<div class="card success-box" style="text-align:center;padding:28px;">
+  <h2>Payment / Checkout Successful (Demo)</h2>
+  <p class="muted">Thank you — the demo checkout completed. Cart cleared.</p>
+  <div style="margin-top:12px;">
+    <a class="btn primary" href="{{ url_for('home') }}">Back to Home</a>
+  </div>
 </div>
 {% endblock %}
