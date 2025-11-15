@@ -3,15 +3,15 @@
 {% block content %}
 <section class="hero">
   <div class="hero-left">
-    <h1>Premium OTT Subscriptions — Delivered Fast</h1>
-    <p class="lead">Choose from top providers, add to cart, and checkout securely (Stripe test).</p>
+    <h1>Premium OTT Subscriptions — Demo Store</h1>
+    <p class="lead">Choose top provider plans, add to cart and checkout for demonstration.</p>
     <div class="hero-ctas">
-      <a class="btn primary" href="{{ url_for('show_plans') }}">Shop Plans</a>
-      <a class="btn ghost" href="{{ url_for('cart') }}">View Cart ({{ session.get('cart_count', 0) }})</a>
+      <a class="btn primary" href="{{ url_for('plans_page') }}">Shop Plans</a>
+      <a class="btn ghost" href="{{ url_for('cart_page') }}">View Cart ({{ session.get('cart')|length if session.get('cart') else 0 }})</a>
     </div>
   </div>
   <div class="hero-right">
-    <img src="{{ url_for('static', filename='img/logo-light.png') }}" alt="promo" class="hero-image">
+    <img src="{{ url_for('static', filename='img/logo-light.png') }}" alt="promo" class="hero-image" style="max-width:260px;">
   </div>
 </section>
 
