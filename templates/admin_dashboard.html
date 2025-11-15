@@ -3,6 +3,7 @@
 {% block content %}
 <section>
   <h2>Admin Dashboard</h2>
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for cat, m in messages %}
@@ -20,7 +21,7 @@
             <img src="{{ url_for('static', filename='ott/' ~ p['logo']) }}" style="width:76px;height:76px;object-fit:contain;border-radius:8px;">
             <div style="flex:1">
               <input name="name" value="{{ p['name'] }}" placeholder="Name" style="width:100%;padding:8px;margin-bottom:6px;">
-              <input name="logo" value="{{ p['logo'] }}" placeholder="Logo filename (static/ott/...)" style="width:100%;padding:8px;margin-bottom:6px;">
+              <input name="logo" value="{{ p['logo'] }}" placeholder="Logo filename (ott/...)" style="width:100%;padding:8px;margin-bottom:6px;">
               <input name="description" value="{{ p['description'] }}" placeholder="Description" style="width:100%;padding:8px;margin-bottom:6px;">
             </div>
             <div style="width:140px">
@@ -55,6 +56,45 @@
         <button class="btn primary" type="submit">Add Plan</button>
       </div>
     </form>
+  </div>
+
+  <!-- Orders table -->
+  <h3 style="margin-top:22px">Orders</h3>
+  <div class="card">
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="text-align:left;">
+          <th style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.04)">ID</th>
+          <th style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.04)">Plan</th>
+          <th style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.04)">Buyer</th>
+          <th style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.04)">UTR</th>
+          <th style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.04)">Amount</th>
+          <th style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.04)">Status</th>
+          <th style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.04)">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">{{ o.id }}</td>
+          <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">{{ get_plan(o.plan_id).name if get_plan(o.plan_id) else '—' }}</td>
+          <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">{{ o.buyer_name }}<br><small class="muted">{{ o.buyer_email }}</small></td>
+          <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">{{ o.utr }}</td>
+          <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">₹{{ o.amount }}</td>
+          <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">{{ o.status }}</td>
+          <td style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">
+            {% if o.status != 'approved' %}
+              <form action="{{ url_for('admin_approve_order', order_id=o.id) }}" method="post" style="display:inline;">
+                <button class="btn primary" type="submit">Approve</button>
+              </form>
+            {% else %}
+              <span class="muted">Approved</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
   <div style="margin-top:20px;">
