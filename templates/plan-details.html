@@ -9,20 +9,18 @@
   <div class="detail-right">
     <h1>{{ plan['name'] }}</h1>
     <div class="price-large">₹{{ plan['price'] }}</div>
-    <p class="muted">{{ plan.get('desc','') }}</p>
+    <p class="muted">{{ plan.get('description','') }}</p>
+
+    <p><strong>Available Items:</strong> {{ plan['qty'] }}</p>
+    {% if plan['qty'] <= 0 %}
+      <span class="stock-badge out">OUT OF STOCK</span>
+    {% endif %}
 
     <div class="detail-actions" style="margin-top:16px;">
-      <a class="btn outlined" href="{{ url_for('add_to_cart', plan_id=plan['id']) }}">Add to Cart</a>
-      <a class="btn primary" href="{{ url_for('checkout') }}">Checkout (Demo)</a>
-    </div>
-
-    <div class="features" style="margin-top:20px;">
-      <h3>What's included</h3>
-      <ul>
-        <li>Instant demo delivery (project only)</li>
-        <li>30 day validity (demo)</li>
-        <li>No streaming content included — conceptual product</li>
-      </ul>
+      <a class="btn outlined" href="{{ url_for('add_to_cart', plan_id=plan['id']) if plan['qty']>0 else '#' }}">Add to Cart</a>
+      <form method="post" action="{{ url_for('checkout') }}" style="display:inline;">
+        <button class="btn primary" type="submit" {% if plan['qty']<=0 %}disabled{% endif %}>Buy Now (Demo)</button>
+      </form>
     </div>
   </div>
 </section>
