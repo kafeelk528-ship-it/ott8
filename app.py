@@ -47,11 +47,11 @@ def init_db():
     cur.execute("SELECT COUNT(1) as cnt FROM plans")
     if cur.fetchone()["cnt"] == 0:
         default = [
-            ("Netflix Premium", 199, "netflix.png", "4K UHD • 4 Screens • 30 Days", 100),
-            ("Amazon Prime Video", 149, "prime.png", "Full HD • All Devices • 30 Days", 100),
-            ("Disney+ Hotstar", 299, "hotstar.png", "Sports + Movies + Web Series", 100),
-            ("Sony LIV Premium", 129, "sonyliv.png", "Full HD • Originals • TV Shows", 100),
-            ("Zee5 Premium", 99, "zee5.png", "Regional content • 30 Days", 100),
+            ("Netflix Premium", 199, "netflix.png", "4K UHD • 4 Screens • 30 Days", 10),
+            ("Amazon Prime Video", 149, "prime.png", "Full HD • All Devices • 30 Days", 15),
+            ("Disney+ Hotstar", 299, "hotstar.png", "Sports + Movies + Web Series", 8),
+            ("Sony LIV Premium", 129, "sonyliv.png", "Full HD • Originals • TV Shows", 12),
+            ("Zee5 Premium", 99, "zee5.png", "Regional content • 30 Days", 20),
         ]
         cur.executemany(
             "INSERT INTO plans (name, price, logo, description, qty) VALUES (?, ?, ?, ?, ?)",
@@ -59,7 +59,6 @@ def init_db():
         )
         conn.commit()
 
-# call init on startup
 with app.app_context():
     init_db()
 
@@ -109,7 +108,6 @@ def update_plan(plan_id, price=None, qty=None, name=None, desc=None, logo=None):
         updates.append("description=?"); params.append(desc)
     if logo is not None:
         updates.append("logo=?"); params.append(logo)
-
     if updates:
         sql = "UPDATE plans SET " + ", ".join(updates) + " WHERE id=?"
         params.append(plan_id)
@@ -157,17 +155,31 @@ def plan_details(plan_id):
 # CART (simple)
 @app.route("/add-to-cart/<int:plan_id>")
 def add_to_cart(plan_id):
+    plan = get_plan(plan_id)
+    if not plan:
+        flash("Invalid product", "danger")
+        return redirect(url_for("plans_page"))
+
+    if plan["qty"] <= 0:
+        flash("Item is out of stock", "danger")
+        return redirect(url_for("plans_page"))
+
     if "cart" not in session:
         session["cart"] = []
+
+    # allow multiple of same? for simplicity use single-item per product
     if plan_id not in session["cart"]:
         session["cart"].append(plan_id)
         session.modified = True
+        flash("Added to cart", "success")
+    else:
+        flash("Already in cart", "info")
+
     return redirect(url_for("cart_page"))
 
 @app.route("/cart")
 def cart_page():
     cart_items = [get_plan(pid) for pid in session.get("cart", [])]
-    # filter None
     cart_items = [c for c in cart_items if c]
     total = sum(item["price"] for item in cart_items)
     return render_template("cart.html", cart=cart_items, total=total)
@@ -177,14 +189,42 @@ def remove_cart(plan_id):
     if "cart" in session and plan_id in session["cart"]:
         session["cart"].remove(plan_id)
         session.modified = True
+        flash("Removed from cart", "info")
     return redirect(url_for("cart_page"))
 
-@app.route("/checkout")
+@app.route("/checkout", methods=["GET", "POST"])
 def checkout():
-    # This is demo — clear cart
-    session.pop("cart", None)
-    flash("Demo checkout completed.", "success")
-    return render_template("success.html")
+    # On POST perform checkout and reduce qty
+    if request.method == "POST":
+        cart = session.get("cart", [])
+        if not cart:
+            flash("Cart is empty", "info")
+            return redirect(url_for("plans_page"))
+
+        conn = get_db()
+        cur = conn.cursor()
+        # verify stock availability first
+        for pid in cart:
+            cur.execute("SELECT qty FROM plans WHERE id=?", (pid,))
+            r = cur.fetchone()
+            if not r or r["qty"] <= 0:
+                flash("Some items are out of stock. Please update your cart.", "danger")
+                return redirect(url_for("cart_page"))
+
+        # reduce qty for each item (one unit each)
+        for pid in cart:
+            cur.execute("UPDATE plans SET qty = qty - 1 WHERE id=? AND qty > 0", (pid,))
+        conn.commit()
+
+        session.pop("cart", None)
+        flash("Checkout successful — stock updated (demo).", "success")
+        return render_template("success.html")
+
+    # GET shows summary/checkout page
+    cart_items = [get_plan(pid) for pid in session.get("cart", [])]
+    cart_items = [c for c in cart_items if c]
+    total = sum(item["price"] for item in cart_items)
+    return render_template("checkout.html", cart=cart_items, total=total)
 
 @app.route("/contact")
 def contact_page():
@@ -198,7 +238,6 @@ def admin_login():
     if request.method == "POST":
         user = request.form.get("username", "")
         pw = request.form.get("password", "")
-        # compare with env vars
         if user == ADMIN_USER and pw == ADMIN_PASS:
             session["is_admin"] = True
             flash("Logged in as admin", "success")
@@ -220,7 +259,6 @@ def admin_dashboard():
     plans = query_plans()
     return render_template("admin_dashboard.html", plans=plans)
 
-# Update plan via POST form
 @app.route("/admin/plan/<int:plan_id>/update", methods=["POST"])
 @admin_required
 def admin_update_plan(plan_id):
@@ -233,7 +271,6 @@ def admin_update_plan(plan_id):
     flash("Plan updated", "success")
     return redirect(url_for("admin_dashboard"))
 
-# Add new plan
 @app.route("/admin/plan/add", methods=["POST"])
 @admin_required
 def admin_add_plan():
@@ -246,7 +283,6 @@ def admin_add_plan():
     flash("Plan added", "success")
     return redirect(url_for("admin_dashboard"))
 
-# Delete plan
 @app.route("/admin/plan/<int:plan_id>/delete", methods=["POST"])
 @admin_required
 def admin_delete_plan(plan_id):
@@ -254,7 +290,6 @@ def admin_delete_plan(plan_id):
     flash("Plan deleted", "info")
     return redirect(url_for("admin_dashboard"))
 
-# Small API to return plan data as JSON (optional)
 @app.route("/admin/plan/<int:plan_id>/json")
 @admin_required
 def admin_plan_json(plan_id):
