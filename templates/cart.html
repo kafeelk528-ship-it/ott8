@@ -4,21 +4,21 @@
 <section class="cart-page">
   <h2>Your Cart</h2>
 
-  {% if items|length == 0 %}
-    <div class="card">Your cart is empty. <a href="{{ url_for('show_plans') }}" class="btn primary">Browse Plans</a></div>
+  {% if cart|length == 0 %}
+    <div class="card">Your cart is empty. <a href="{{ url_for('plans_page') }}" class="btn primary">Browse Plans</a></div>
   {% else %}
     <div class="cart-grid">
       <div class="cart-items">
-        {% for it in items %}
+        {% for it in cart %}
           <div class="cart-row card">
-            <img src="{{ url_for('static', filename='ott/' ~ it.logo) }}" alt="{{ it.name }}" class="cart-logo">
+            <img src="{{ url_for('static', filename='ott/' ~ it['logo']) }}" alt="{{ it['name'] }}" class="cart-logo">
             <div class="cart-meta">
-              <h4>{{ it.name }}</h4>
-              <div class="muted">₹{{ it.price }} × {{ it.qty }}</div>
+              <h4>{{ it['name'] }}</h4>
+              <div class="muted">₹{{ it['price'] }}</div>
             </div>
             <div class="cart-right">
-              <div class="item-total">₹{{ it.total }}</div>
-              <a class="btn small ghost" href="{{ url_for('remove_from_cart', plan_id=it.id) }}">Remove</a>
+              <div class="item-total">₹{{ it['price'] }}</div>
+              <a class="btn small ghost" href="{{ url_for('remove_cart', plan_id=it['id']) }}">Remove</a>
             </div>
           </div>
         {% endfor %}
@@ -32,7 +32,7 @@
           <a class="btn primary" href="{{ url_for('checkout') }}">Proceed to Checkout</a>
         </div>
         <div style="margin-top:8px">
-          <a class="btn ghost" href="{{ url_for('clear_cart') }}">Clear Cart</a>
+          <a class="btn ghost" href="{{ url_for('home') }}">Continue Shopping</a>
         </div>
       </aside>
     </div>
