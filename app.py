@@ -15,15 +15,15 @@ DATA_FILE = os.path.join(os.path.dirname(__file__), "plans.json")
 SUBMISSIONS_FILE = os.path.join(os.path.dirname(__file__), "submissions.json")
 
 # Telegram config (optional)
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+TELEGRAM_BOT_TOKEN = os.getenv("8162787624:AAGlBqWs32zSKFd76PNXjBT-e66Y9mh0nY4", "")
+TELEGRAM_CHAT_ID = os.getenv("946189130", "")
 
 # Admin credentials from env (fallback defaults)
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "12345")
 
 # Domain (optional)
-YOUR_DOMAIN = os.getenv("YOUR_DOMAIN", "").rstrip("/")
+YOUR_DOMAIN = os.getenv("https://ott8-3.onrender.com", "").rstrip("/")
 
 # ---------- Default demo plans ----------
 DEFAULT_PLANS = [
@@ -365,3 +365,4 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     debug = os.getenv("FLASK_ENV", "").lower() != "production"
     app.run(host="0.0.0.0", port=port, debug=debug)
+
