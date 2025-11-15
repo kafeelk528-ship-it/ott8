@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Payment Submitted{% endblock %}
+{% block content %}
+<section style="max-width:720px;margin:auto;">
+  <div class="card" style="text-align:center;">
+    <h2>Payment Submitted</h2>
+    <p class="muted">Order ID: <strong>#{{ order.id }}</strong></p>
+    <p class="muted">UTR: <strong>{{ order.utr }}</strong></p>
+    <p>Owner will verify the transaction and you will receive an email once approved.</p>
+    <a class="btn primary" href="{{ url_for('home') }}">Back to Home</a>
+  </div>
+</section>
+{% endblock %}
