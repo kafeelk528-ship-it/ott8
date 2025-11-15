@@ -1,11 +1,12 @@
 # app.py
-# Complete Flask app for OTT demo:
-# - SQLite persistence (plans + orders)
-# - Cart, checkout (reduces stock)
-# - Manual QR payment flow (submit UTR)
-# - Telegram notify on UTR submission
+# Updated full Flask app (fresh) with:
+# - SQLite (plans + orders)
+# - Cart + add/remove
+# - Checkout page with choice: card (simulate) or QR (manual UTR)
+# - Manual QR flow for single-plan or whole-cart (creates orders)
+# - Telegram notification on UTR submission
 # - Admin panel to CRUD plans and approve orders (sends email)
-# - Reads secrets from environment variables (do NOT hardcode secrets)
+# - Reads secrets from environment variables
 
 import os
 import sqlite3
@@ -24,8 +25,6 @@ from flask import (
 # -------------------------
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
-
-# Database file path
 DB_PATH = os.path.join(os.path.dirname(__file__), "ott.db")
 
 # -------------------------
@@ -58,7 +57,6 @@ def init_db():
         qty INTEGER NOT NULL DEFAULT 0
     )
     """)
-
     cur.execute("""
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +65,7 @@ def init_db():
         buyer_email TEXT,
         utr TEXT,
         amount INTEGER,
-        status TEXT DEFAULT 'pending',   -- pending, approved, rejected
+        status TEXT DEFAULT 'pending',
         created_at TEXT DEFAULT (datetime('now')),
         approved_at TEXT
     )
@@ -94,7 +92,7 @@ with app.app_context():
     init_db()
 
 # -------------------------
-# Admin auth & env vars
+# Env + Admin config
 # -------------------------
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "12345")
@@ -109,7 +107,7 @@ def admin_required(f):
     return wrapped
 
 # -------------------------
-# Plans helpers (CRUD)
+# Plans helpers
 # -------------------------
 def query_plans():
     conn = get_db()
@@ -203,11 +201,11 @@ def set_order_status(order_id, status):
         cur.execute("UPDATE orders SET status=? WHERE id=?", (status, order_id))
     conn.commit()
 
-# expose small helpers to templates
+# Expose helpers to templates
 app.jinja_env.globals.update(query_orders=query_orders, get_plan=get_plan)
 
 # -------------------------
-# Telegram notify
+# Telegram notification
 # -------------------------
 def send_telegram_notification(order):
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -276,7 +274,7 @@ def send_plan_email(buyer_email, subject, body, attachments=None):
         return False
 
 # -------------------------
-# Public routes (store)
+# Routes - public
 # -------------------------
 @app.route("/")
 def home():
@@ -295,7 +293,9 @@ def plan_details(plan_id):
         abort(404)
     return render_template("plan-details.html", plan=p)
 
-# Cart
+# -------------------------
+# Cart routes
+# -------------------------
 @app.route("/add-to-cart/<int:plan_id>")
 def add_to_cart(plan_id):
     plan = get_plan(plan_id)
@@ -332,18 +332,34 @@ def remove_cart(plan_id):
         flash("Removed from cart", "info")
     return redirect(url_for("cart_page"))
 
-# Checkout (demo) - POST reduces qty by 1 per item
+# -------------------------
+# Checkout (updated)
+# -------------------------
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
-    if request.method == "POST":
-        cart = session.get("cart", [])
-        if not cart:
+    """
+    GET -> show checkout page with payment method options
+    POST -> depending on payment_method:
+        - "card"  -> simulate immediate payment: reduce stock, clear cart, success
+        - "qr"   -> show QR + UTR form for cart (does NOT reduce stock yet)
+    """
+    cart = session.get("cart", [])
+    cart_items = [get_plan(pid) for pid in cart]
+    cart_items = [c for c in cart_items if c]
+    total = sum(item["price"] for item in cart_items)
+
+    if request.method == "GET":
+        return render_template("checkout.html", cart=cart_items, total=total)
+
+    # POST
+    method = request.form.get("payment_method", "card")
+    if method == "card":
+        if not cart_items:
             flash("Cart is empty", "info")
             return redirect(url_for("plans_page"))
 
         conn = get_db()
         cur = conn.cursor()
-        # verify stock
         for pid in cart:
             cur.execute("SELECT qty FROM plans WHERE id=?", (pid,))
             r = cur.fetchone()
@@ -351,7 +367,6 @@ def checkout():
                 flash("Some items are out of stock. Please update your cart.", "danger")
                 return redirect(url_for("cart_page"))
 
-        # reduce qty
         for pid in cart:
             cur.execute("UPDATE plans SET qty = qty - 1 WHERE id=? AND qty > 0", (pid,))
         conn.commit()
@@ -359,17 +374,20 @@ def checkout():
         flash("Checkout successful — stock updated (demo).", "success")
         return render_template("success.html")
 
-    cart_items = [get_plan(pid) for pid in session.get("cart", [])]
-    cart_items = [c for c in cart_items if c]
-    total = sum(item["price"] for item in cart_items)
-    return render_template("checkout.html", cart=cart_items, total=total)
+    elif method == "qr":
+        qr_path = url_for('static', filename='img/qr.png')
+        return render_template("pay_manual_cart.html", cart=cart_items, total=total, qr_path=qr_path)
+
+    else:
+        flash("Unknown payment method", "danger")
+        return redirect(url_for("checkout"))
 
 @app.route("/contact")
 def contact_page():
     return render_template("contact.html")
 
 # -------------------------
-# Manual bank/QR payment flow
+# Manual bank/QR payment for single plan
 # -------------------------
 @app.route("/pay_manual/<int:plan_id>", methods=["GET"])
 def pay_manual(plan_id):
@@ -379,17 +397,49 @@ def pay_manual(plan_id):
     qr_path = url_for('static', filename='img/qr.png')
     return render_template("pay_manual.html", plan=plan, qr_path=qr_path)
 
+# -------------------------
+# Submit UTR (single-plan or cart)
+# -------------------------
 @app.route("/submit-utr", methods=["POST"])
 def submit_utr():
+    """
+    Handles UTR submission for either:
+      - single-plan payment (form has plan_id)
+      - cart payment (form has cart_mode=1) -> creates orders per cart item
+    """
+    cart_mode = request.form.get("cart_mode")
+    buyer_name = request.form.get("buyer_name")
+    buyer_email = request.form.get("buyer_email")
+    utr = request.form.get("utr", "").strip()
+
+    if cart_mode:
+        cart = session.get("cart", [])
+        if not cart:
+            flash("Cart is empty.", "info")
+            return redirect(url_for("plans_page"))
+
+        created_orders = []
+        for pid in cart:
+            plan = get_plan(pid)
+            if not plan:
+                continue
+            order_id = create_order(pid, buyer_name, buyer_email, utr, plan["price"])
+            created_orders.append(order_id)
+
+        if created_orders:
+            first_order = get_order(created_orders[0])
+            send_telegram_notification(first_order)
+
+        flash("UTR submitted — owner will verify and approve shortly.", "success")
+        return render_template("utr_submitted.html", order=get_order(created_orders[0]) if created_orders else None, plan=None)
+
+    # single plan flow
     try:
         plan_id = int(request.form.get("plan_id"))
     except:
         flash("Invalid plan", "danger")
         return redirect(url_for("plans_page"))
 
-    buyer_name = request.form.get("buyer_name")
-    buyer_email = request.form.get("buyer_email")
-    utr = request.form.get("utr", "").strip()
     plan = get_plan(plan_id)
     if not plan:
         flash("Invalid plan", "danger")
@@ -397,15 +447,12 @@ def submit_utr():
 
     order_id = create_order(plan_id, buyer_name, buyer_email, utr, plan["price"])
     order = get_order(order_id)
-
-    # notify owner via Telegram
     send_telegram_notification(order)
-
     flash("UTR submitted — owner will check and approve shortly.", "success")
     return render_template("utr_submitted.html", order=order, plan=plan)
 
 # -------------------------
-# Admin UI & actions
+# Admin routes
 # -------------------------
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
@@ -476,7 +523,13 @@ def admin_approve_order(order_id):
     # mark approved
     set_order_status(order_id, "approved")
 
-    # send plan email to buyer
+    # optionally reduce stock for that plan now (1 unit)
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE plans SET qty = qty - 1 WHERE id=? AND qty > 0", (order["plan_id"],))
+    conn.commit()
+
+    # send plan by email to buyer
     plan = get_plan(order["plan_id"])
     subject = f"Your {plan['name']} — Access / Receipt"
     body = f"""
@@ -492,7 +545,7 @@ def admin_approve_order(order_id):
     """
     send_plan_email(order['buyer_email'], subject, body)
 
-    flash("Order approved and email sent to buyer.", "success")
+    flash("Order approved, stock updated and email sent to buyer.", "success")
     return redirect(url_for("admin_dashboard"))
 
 @app.route("/admin/order/<int:order_id>/json")
@@ -507,5 +560,4 @@ def admin_order_json(order_id):
 # Run server
 # -------------------------
 if __name__ == "__main__":
-    # debug True only for local usage
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
