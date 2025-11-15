@@ -4,13 +4,17 @@
 <section style="max-width:420px;margin:auto;padding-top:30px;">
   <div class="card">
     <h2>Admin Login</h2>
-    {% if error %}
-      <div class="flash">Invalid credentials</div>
-    {% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, m in messages %}
+          <div class="flash {{ cat }}">{{ m }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
     <form method="post">
-      <input name="username" placeholder="Username" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;">
-      <input name="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;">
-      <div style="display:flex;gap:8px;">
+      <input name="username" placeholder="Username" class="input" required>
+      <input name="password" type="password" placeholder="Password" class="input" required>
+      <div style="display:flex;gap:8px;margin-top:12px;">
         <button class="btn primary" type="submit">Login</button>
         <a class="btn ghost" href="{{ url_for('home') }}">Cancel</a>
       </div>
