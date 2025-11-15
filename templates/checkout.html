@@ -1,12 +1,51 @@
 {% extends "base.html" %}
 {% block title %}Checkout — OTT Store{% endblock %}
 {% block content %}
-<section class="card" style="text-align:center;padding:28px;">
-  <h2>Checkout — Demo</h2>
-  <p class="muted">You are about to purchase {{ cart|length }} items for ₹{{ total }} (demo). This will reduce stock by 1 per item.</p>
-  <form method="post">
-    <button class="btn primary" type="submit">Confirm Purchase (Demo)</button>
-    <a class="btn ghost" href="{{ url_for('cart_page') }}">Cancel</a>
-  </form>
+<section style="max-width:900px;margin:auto;">
+  <h2>Checkout</h2>
+
+  {% if not cart %}
+    <div class="card">
+      <p>Your cart is empty.</p>
+      <a class="btn primary" href="{{ url_for('plans_page') }}">Browse Plans</a>
+    </div>
+  {% else %}
+    <div class="card">
+      <h3>Order Summary</h3>
+      <ul>
+        {% for item in cart %}
+          <li style="display:flex;justify-content:space-between;padding:6px 0;">
+            <div>
+              <strong>{{ item.name }}</strong><br><small class="muted">{{ item.description or '' }}</small>
+            </div>
+            <div>₹{{ item.price }} <small class="muted">• {{ item.qty }} in stock</small></div>
+          </li>
+        {% endfor %}
+      </ul>
+      <hr>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><strong>Total</strong></div>
+        <div><strong>₹{{ total }}</strong></div>
+      </div>
+
+      <hr>
+      <h4>Choose payment method</h4>
+      <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="hidden" name="csrf" value="no-csrf-demo">
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="radio" name="payment_method" value="card" checked> Pay by Card (simulate)
+        </label>
+
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="radio" name="payment_method" value="qr"> Pay via Bank / QR (submit UTR after payment)
+        </label>
+
+        <div style="width:100%;margin-top:10px;">
+          <button class="btn primary" type="submit">Proceed</button>
+          <a class="btn ghost" href="{{ url_for('cart_page') }}">Back to Cart</a>
+        </div>
+      </form>
+    </div>
+  {% endif %}
 </section>
 {% endblock %}
