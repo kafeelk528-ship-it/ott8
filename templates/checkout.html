@@ -1,98 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Checkout — OTT Store{% endblock %}
+{% block title %}Checkout{% endblock %}
 
 {% block content %}
-<section style="max-width:920px;margin:28px auto;padding:0 12px;">
-  <h2 style="margin-bottom:12px;">Checkout</h2>
+<h1>Checkout</h1>
 
-  {% if not cart %}
-    <div class="card">
-      <p>Your cart is empty.</p>
-      <a class="btn primary" href="{{ url_for('plans_page') }}">Browse Plans</a>
-    </div>
-  {% else %}
-    <div class="card" style="padding:20px;">
-      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
-        <div style="flex:1 1 360px;">
-          <h3 style="margin-top:0;">Order Summary</h3>
-          <ul style="list-style:none;padding:0;margin:0 0 12px 0;">
-            {% for item in cart %}
-              <li style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04);">
-                <div>
-                  <strong>{{ item.name }}</strong>
-                  {% if item.description %}
-                    <div class="muted" style="font-size:13px;">{{ item.description }}</div>
-                  {% endif %}
-                </div>
-                <div style="text-align:right;">
-                  <div>₹{{ item.price }}</div>
-                  <div class="muted" style="font-size:12px;">In stock: {{ item.qty }}</div>
-                </div>
-              </li>
-            {% endfor %}
-          </ul>
+<h3>Total Amount: ₹{{ total }}</h3>
 
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
-            <div><strong>Total</strong></div>
-            <div><strong>₹{{ total }}</strong></div>
-          </div>
-        </div>
-
-        <div style="flex:0 0 320px;">
-          <h4 style="margin-top:0;">Choose payment method</h4>
-
-          <!-- Visual highlight for QR option -->
-          <div style="border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:12px;margin-bottom:12px;background:#f8fafc;">
-            <div style="display:flex;align-items:center;gap:12px;">
-              <div style="flex:1;">
-                <div style="font-weight:600;">Pay via Bank / QR (Recommended)</div>
-                <div class="muted" style="font-size:13px;">Scan QR or pay using your bank UPI/IMPS/NEFT. Submit UTR after payment.</div>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-size:18px;font-weight:700;">₹{{ total }}</div>
-                <div style="font-size:12px;" class="muted">Secure • Manual verify</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Two-button form: the clicked button decides the method -->
-          <form method="post" id="payment-form" style="display:flex;flex-direction:column;gap:8px;">
-            <!-- Hidden CSRF placeholder (demo) -->
-            <input type="hidden" name="csrf" value="no-csrf-demo">
-
-            <!-- Primary QR button (preselected behavior via JS) -->
-            <button class="btn primary" name="payment_method" value="qr" type="submit" id="btn-qr">
-              Pay via QR / Bank (Submit UTR)
-            </button>
-
-            <!-- Secondary Card button -->
-            <button class="btn ghost" name="payment_method" value="card" type="submit" id="btn-card" style="border:1px solid rgba(0,0,0,0.06);">
-              Pay by Card (simulate immediate)
-            </button>
-
-            <a class="btn" href="{{ url_for('cart_page') }}" style="text-align:center;margin-top:6px;">Back to Cart</a>
-          </form>
-
-          <small class="muted" style="display:block;margin-top:10px;">
-            Note: QR / Bank is the default/recommended flow. Card payment simulates an instant purchase (demo).
-          </small>
-        </div>
-      </div>
-    </div>
-  {% endif %}
-</section>
-
-<!-- Ensure QR path selected visually and defend against missing field: optional logging -->
-<script>
-  // On page load: focus the QR button to indicate default choice
-  document.addEventListener("DOMContentLoaded", function () {
-    const btnQR = document.getElementById("btn-qr");
-    if (btnQR) {
-      // small visual cue
-      btnQR.focus();
-      // optional: add aria-pressed attribute for screen readers
-      btnQR.setAttribute("aria-pressed", "true");
-    }
-  });
-</script>
+<div class="payment-options">
+    <a href="{{ url_for('checkout_qr') }}" class="btn primary">
+        Pay via QR (Bank Transfer)
+    </a>
+</div>
 {% endblock %}
