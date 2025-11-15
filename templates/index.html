@@ -1,40 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Home — OTT Store{% endblock %}
+
 {% block content %}
-<section class="hero">
-  <div class="hero-left">
-    <h1>Premium OTT Subscriptions — Demo Store</h1>
-    <p class="lead">Choose top provider plans, add to cart and checkout for demonstration.</p>
-    <div class="hero-ctas">
-      <a class="btn primary" href="{{ url_for('plans_page') }}">Shop Plans</a>
-      <a class="btn ghost" href="{{ url_for('cart_page') }}">View Cart ({{ session.get('cart')|length if session.get('cart') else 0 }})</a>
+<h1 class="page-title">Popular OTT Plans</h1>
+
+<div class="plans-grid">
+{% for p in plans %}
+    <div class="card">
+        <img src="{{ url_for('static', filename='img/' + p.logo) }}" class="logo-img">
+        <h3>{{ p.name }}</h3>
+        <p>{{ p.desc }}</p>
+        <p><b>₹{{ p.price }}</b></p>
+        <p class="stock">Available: {{ p.stock }}</p>
+        <a class="btn" href="{{ url_for('plan_details', plan_id=p.id) }}">View Details</a>
     </div>
-  </div>
-  <div class="hero-right">
-    <img src="{{ url_for('static', filename='img/logo-light.png') }}" alt="promo" class="hero-image" style="max-width:260px;">
-  </div>
-</section>
-
-<section class="featured container">
-  <h2>Featured Plans</h2>
-  <div class="grid">
-    {% for p in plans[:4] %}
-    <div class="product-card">
-      <img class="provider" src="{{ url_for('static', filename='ott/' ~ p['logo']) }}" alt="{{ p['name'] }}">
-      <h3>{{ p['name'] }}</h3>
-      <div class="price">₹{{ p['price'] }}</div>
-      <p class="muted small">Available: {{ p['qty'] }}</p>
-
-      {% if p['qty'] <= 0 %}
-        <span class="stock-badge out">OUT OF STOCK</span>
-      {% endif %}
-
-      <div class="card-actions">
-        <a class="btn outlined" href="{{ url_for('plan_details', plan_id=p['id']) }}">Details</a>
-        <a class="btn primary {% if p['qty'] <= 0 %}disabled{% endif %}" href="{% if p['qty'] > 0 %}{{ url_for('add_to_cart', plan_id=p['id']) }}{% else %}#{% endif %}">Add to Cart</a>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</section>
+{% endfor %}
+</div>
 {% endblock %}
