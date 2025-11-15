@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Success{% endblock %}
+
 {% block content %}
-<div class="card success-box" style="text-align:center;padding:28px;">
-  <h2>Payment / Checkout Successful (Demo)</h2>
-  <p class="muted">Thank you — the demo checkout completed. Cart cleared.</p>
-  <div style="margin-top:12px;">
-    <a class="btn primary" href="{{ url_for('home') }}">Back to Home</a>
-  </div>
+<div class="success-box">
+    <h1>Payment Submitted</h1>
+    <p>Your UTR has been sent for verification.</p>
+    <p>You will get your plan soon by email.</p>
+    <a href="/" class="btn">Back to Home</a>
 </div>
 {% endblock %}
