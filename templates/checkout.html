@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Checkout — OTT Store{% endblock %}
+{% block content %}
+<section class="card" style="text-align:center;padding:28px;">
+  <h2>Checkout — Demo</h2>
+  <p class="muted">You are about to purchase {{ cart|length }} items for ₹{{ total }} (demo). This will reduce stock by 1 per item.</p>
+  <form method="post">
+    <button class="btn primary" type="submit">Confirm Purchase (Demo)</button>
+    <a class="btn ghost" href="{{ url_for('cart_page') }}">Cancel</a>
+  </form>
+</section>
+{% endblock %}
