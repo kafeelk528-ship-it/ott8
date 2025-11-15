@@ -1,4 +1,4 @@
-# app.py - Updated with admin edit/add/delete + plans persistence (plans.json)
+# app.py - full updated (persistence + robust submit_utr + telegram)
 import os
 import json
 from datetime import datetime
@@ -12,17 +12,18 @@ import requests
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 DATA_FILE = os.path.join(os.path.dirname(__file__), "plans.json")
+SUBMISSIONS_FILE = os.path.join(os.path.dirname(__file__), "submissions.json")
 
 # Telegram config (optional)
-TELEGRAM_BOT_TOKEN = os.getenv("8162787624:AAGlBqWs32zSKFd76PNXjBT-e66Y9mh0nY4", "")
-TELEGRAM_CHAT_ID = os.getenv("946189130", "")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 # Admin credentials from env (fallback defaults)
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "12345")
 
 # Domain (optional)
-YOUR_DOMAIN = os.getenv("https://ott8-3.onrender.com", "").rstrip("/")
+YOUR_DOMAIN = os.getenv("YOUR_DOMAIN", "").rstrip("/")
 
 # ---------- Default demo plans ----------
 DEFAULT_PLANS = [
@@ -38,12 +39,10 @@ def load_plans():
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                # Validate it is a list of dicts
                 if isinstance(data, list):
                     return data
         except Exception as e:
             app.logger.warning("Failed to load plans.json: %s", e)
-    # fallback to default
     return DEFAULT_PLANS.copy()
 
 def save_plans(plans):
@@ -65,20 +64,27 @@ def next_plan_id():
         return 1
     return max(int(p["id"]) for p in PLANS) + 1
 
-# ---------- Telegram notification ----------
-def send_telegram_notification(text):
+# ---------- Telegram notification (robust) ----------
+def send_telegram_notification(text: str) -> bool:
+    """
+    Send a message to configured Telegram bot/chat. Returns True on success.
+    Robust to network failures and logs exceptions.
+    """
     token = TELEGRAM_BOT_TOKEN
     chat_id = TELEGRAM_CHAT_ID
     if not token or not chat_id:
-        app.logger.debug("Telegram not configured; skipping.")
+        app.logger.debug("Telegram not configured (TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing).")
         return False
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
+
     try:
-        resp = requests.post(url, json={"chat_id": chat_id, "text": text})
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
+        resp = requests.post(url, json=payload, timeout=10)
         resp.raise_for_status()
+        app.logger.info("Telegram notification sent.")
         return True
     except Exception as e:
-        app.logger.exception("Telegram notify failed: %s", e)
+        app.logger.exception("Failed to send Telegram notification: %s", e)
         return False
 
 # ---------- Routes - public ----------
@@ -157,44 +163,87 @@ def checkout_qr():
         flash("Cart is empty.", "info")
         return redirect(url_for("plans_page"))
     total = sum(int(item.get("price", 0)) for item in cart_items)
-    # expects static/img/qr.png exists
     qr_path = url_for('static', filename='img/qr.png')
     return render_template("pay_manual_cart.html", cart=cart_items, total=total, qr_path=qr_path)
 
-# ---------- Submit UTR (QR payment) ----------
+# ---------- Submit UTR (robust) ----------
 @app.route("/submit-utr", methods=["POST"])
 def submit_utr():
-    utr = request.form.get("utr", "").strip()
-    buyer_name = request.form.get("buyer_name", "").strip()
-    buyer_email = request.form.get("buyer_email", "").strip()
+    try:
+        # Validate data
+        utr = (request.form.get("utr") or "").strip()
+        buyer_name = (request.form.get("buyer_name") or "").strip()
+        buyer_email = (request.form.get("buyer_email") or "").strip()
 
-    if not utr:
-        flash("Please enter UTR number", "danger")
+        if not utr:
+            flash("Please enter a UTR number.", "danger")
+            return redirect(url_for("checkout_qr"))
+
+        # Gather cart info
+        cart = session.get("cart", [])
+        cart_items = [get_plan(pid) for pid in cart]
+        cart_items = [c for c in cart_items if c]
+        if not cart_items:
+            flash("Your cart is empty.", "info")
+            return redirect(url_for("plans_page"))
+
+        total = sum(int(item.get("price", 0)) for item in cart_items)
+        items_text = ", ".join([item.get("name", "-") for item in cart_items])
+
+        # Build message for Telegram / logs
+        text = (
+            f"*New Payment Submission*\n"
+            f"Items: {items_text}\n"
+            f"Amount: ₹{total}\n"
+            f"UTR: `{utr}`\n"
+            f"Buyer: {buyer_name or '-'} ({buyer_email or '-'})\n"
+            f"Time: {datetime.utcnow().isoformat()} UTC"
+        )
+
+        # Try to notify via Telegram (if configured)
+        telegram_ok = False
+        try:
+            telegram_ok = send_telegram_notification(text)
+        except Exception as e:
+            app.logger.exception("Telegram notify failed inside submit_utr: %s", e)
+
+        # Persist submission to submissions.json for audit
+        submission = {
+            "utr": utr,
+            "buyer_name": buyer_name,
+            "buyer_email": buyer_email,
+            "items": [{"id": i.get("id"), "name": i.get("name"), "price": i.get("price")} for i in cart_items],
+            "total": total,
+            "telegram_sent": bool(telegram_ok),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        try:
+            existing = []
+            if os.path.exists(SUBMISSIONS_FILE):
+                with open(SUBMISSIONS_FILE, "r", encoding="utf-8") as f:
+                    existing = json.load(f) or []
+            existing.append(submission)
+            with open(SUBMISSIONS_FILE, "w", encoding="utf-8") as f:
+                json.dump(existing, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            app.logger.exception("Failed to persist submission to submissions.json: %s", e)
+
+        # Clear cart and show success
+        session.pop("cart", None)
+        flash("UTR submitted for verification. Owner will verify and deliver.", "success")
+        return render_template("success.html")
+
+    except Exception as e:
+        # Log full traceback
+        app.logger.exception("submit_utr failed: %s", e)
+        flash("An unexpected server error occurred while submitting your payment. The owner has been notified.", "danger")
+        # Try to notify owner via telegram about the error (safe)
+        try:
+            err_text = f"⚠️ submit_utr failed on server:\n{str(e)}\nTime: {datetime.utcnow().isoformat()}"
+            send_telegram_notification(err_text)
+        except Exception:
+            app.logger.debug("Failed to send error notification to Telegram.")
         return redirect(url_for("checkout_qr"))
-
-    cart = session.get("cart", [])
-    cart_items = [get_plan(pid) for pid in cart]
-    cart_items = [c for c in cart_items if c]
-    total = sum(int(item.get("price", 0)) for item in cart_items)
-    items_text = ", ".join([item.get("name", "") for item in cart_items])
-
-    # Notify via Telegram
-    text = (
-        f"📥 New Manual Payment Submission\n"
-        f"Items: {items_text}\n"
-        f"Amount: ₹{total}\n"
-        f"UTR: {utr}\n"
-        f"Buyer: {buyer_name or '-'} ({buyer_email or '-'})\n"
-        f"Time: {datetime.utcnow().isoformat()} UTC\n"
-    )
-    send_telegram_notification = send_telegram_notification = send_telegram_notification if 'send_telegram_notification' in globals() else None
-    # Use the helper function above (if configured)
-    send_telegram_notification(text) if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID else app.logger.debug("Telegram not configured")
-
-    # Clear cart and show success
-    session.pop("cart", None)
-    flash("UTR submitted for verification. Owner will verify and deliver.", "success")
-    return render_template("success.html")
 
 # ---------- Contact ----------
 @app.route("/contact")
@@ -219,12 +268,6 @@ def admin_logout():
     flash("Logged out", "info")
     return redirect(url_for("home"))
 
-def admin_required_redirect():
-    if not session.get("admin"):
-        flash("Login required", "info")
-        return redirect(url_for("admin_login"))
-    return None
-
 # ---------- Admin dashboard ----------
 @app.route("/admin/dashboard")
 def admin_dashboard():
@@ -243,7 +286,6 @@ def admin_update_plan(plan_id):
         flash("Plan not found", "danger")
         return redirect(url_for("admin_dashboard"))
 
-    # Extract and validate form values
     name = request.form.get("name") or plan.get("name")
     logo = request.form.get("logo") or plan.get("logo", "")
     desc = request.form.get("description") or request.form.get("desc") or plan.get("desc", plan.get("description", ""))
@@ -256,7 +298,6 @@ def admin_update_plan(plan_id):
     except:
         stock = plan.get("stock", 0)
 
-    # Update plan object
     plan.update({
         "name": name,
         "logo": logo,
@@ -265,7 +306,6 @@ def admin_update_plan(plan_id):
         "stock": stock
     })
 
-    # Persist
     save_plans(PLANS)
     flash("Plan updated", "success")
     return redirect(url_for("admin_dashboard"))
@@ -314,7 +354,6 @@ def admin_delete_plan(plan_id):
 # ---------- Optional: serve plans.json (debug) ----------
 @app.route("/_debug/plans.json")
 def debug_plans_file():
-    # Only allow if admin logged in to avoid exposing editing endpoint widely
     if not session.get("admin"):
         return redirect(url_for("admin_login"))
     if os.path.exists(DATA_FILE):
@@ -326,4 +365,3 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     debug = os.getenv("FLASK_ENV", "").lower() != "production"
     app.run(host="0.0.0.0", port=port, debug=debug)
-
