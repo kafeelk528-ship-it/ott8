@@ -1,42 +1,23 @@
-<!doctype html>
-<html lang="en">
+{% raw %}
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8">
-  <title>{% block title %}OTT Store{% endblock %}</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<title>OTT Store</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <header class="nav">
-    <div class="container nav-inner">
-      <a class="brand" href="{{ url_for('home') }}">OTT Store</a>
-      <nav class="links">
-        <a href="{{ url_for('plans_page') }}" class="nav-link">Plans</a>
-        <a href="{{ url_for('cart_page') }}" class="nav-link">Cart ({{ session.get('cart', [])|length }})</a>
-        <a href="{{ url_for('contact_page') }}" class="nav-link">Contact</a>
-        <a href="{{ url_for('admin_login') }}" class="nav-link">Admin</a>
-      </nav>
-    </div>
-  </header>
 
-  <main class="container page">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-wrap">
-          {% for category, msg in messages %}
-            <div class="flash {{ category }}">{{ msg }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+<nav class="navbar">
+    <a href="/">Home</a>
+    <a href="/plans">Plans</a>
+    <a href="/cart">Cart</a>
+    <a href="/contact">Contact</a>
+</nav>
 
+<div class="container">
     {% block content %}{% endblock %}
-  </main>
+</div>
 
-  <footer class="footer">
-    <div class="container">
-      <small>© {{ (now().year if now is defined else '') }} OTT Store — Demo</small>
-    </div>
-  </footer>
 </body>
 </html>
+{% endraw %}
