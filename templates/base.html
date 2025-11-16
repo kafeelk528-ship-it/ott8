@@ -1,27 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}OTT Store{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="utf-8">
+  <title>{% block title %}OTT Store{% endblock %}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-<!-- Navbar -->
-<nav class="navbar">
-    <a href="{{ url_for('home') }}" class="logo">OTT Store</a>
-
-    <div class="nav-links">
-        <a href="{{ url_for('plans_page') }}">Plans</a>
-        <a href="{{ url_for('cart_page') }}">Cart ({{ session.get('cart', [])|length }})</a>
-        <a href="{{ url_for('contact_page') }}">Contact</a>
-        <a href="{{ url_for('admin_login') }}">Admin</a>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="{{ url_for('home') }}">OTT Store</a>
+      <nav class="links">
+        <a href="{{ url_for('plans_page') }}" class="nav-link">Plans</a>
+        <a href="{{ url_for('cart_page') }}" class="nav-link">Cart ({{ session.get('cart', [])|length }})</a>
+        <a href="{{ url_for('contact_page') }}" class="nav-link">Contact</a>
+        <a href="{{ url_for('admin_login') }}" class="nav-link">Admin</a>
+      </nav>
     </div>
-</nav>
+  </header>
 
-<div class="container">
+  <main class="container page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for category, msg in messages %}
+            <div class="flash {{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     {% block content %}{% endblock %}
-</div>
+  </main>
 
+  <footer class="footer">
+    <div class="container">
+      <small>© {{ (now().year if now is defined else '') }} OTT Store — Demo</small>
+    </div>
+  </footer>
 </body>
 </html>
