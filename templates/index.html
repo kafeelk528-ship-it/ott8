@@ -1,19 +1,22 @@
-{% raw %}
 {% extends "base.html" %}
+{% block title %}Home — OTT Store{% endblock %}
 {% block content %}
-<h1>OTT Store</h1>
+<h1 class="page-title">Featured Plans</h1>
 
-<div class="grid">
-{% for p in plans %}
-    <div class="card">
-        <img src="{{ url_for('static', filename=p.logo) }}">
+<div class="cards">
+  {% for p in plans %}
+    <article class="card">
+      <img class="card-logo" src="{{ url_for('static', filename=p.logo) }}" alt="{{ p.name }}">
+      <div class="card-body">
         <h3>{{ p.name }}</h3>
-        <p>{{ p.desc }}</p>
-        <p>₹{{ p.price }}</p>
-        <a href="/plan/{{ p.id }}">View</a>
-    </div>
-{% endfor %}
+        <p class="muted">{{ p.desc }}</p>
+        <div class="price">₹{{ p.price }}</div>
+        <div class="card-actions">
+          <a class="btn small" href="{{ url_for('plan_details', plan_id=p.id) }}">Details</a>
+          <a class="btn primary small" href="{{ url_for('add_to_cart', plan_id=p.id) }}">Add to Cart</a>
+        </div>
+      </div>
+    </article>
+  {% endfor %}
 </div>
-
 {% endblock %}
-{% endraw %}
