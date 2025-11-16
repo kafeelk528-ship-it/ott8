@@ -1,0 +1,164 @@
+/* ------------------------------------------
+   CLEAN DARK UI (STABLE VERSION)
+------------------------------------------- */
+
+:root {
+  --bg: #0e1525;
+  --card: #131c2b;
+  --muted: #9ba4b4;
+  --text: #e8eef5;
+  --accent: #5eead4;
+  --primary: #06b6d4;
+  --danger: #ef4444;
+}
+
+/* Global */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+.container { max-width: 1100px; margin: auto; padding: 20px; }
+
+/* Navbar */
+.nav {
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.nav-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.brand {
+  color: var(--accent); 
+  text-decoration: none; 
+  font-weight: 700;
+  font-size: 20px;
+}
+.links { display: flex; gap: 15px; }
+.nav-link {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 8px;
+}
+.nav-link:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+}
+
+/* Cards */
+.cards {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.card {
+  width: calc(50% - 16px);
+  background: var(--card);
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  gap: 15px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.card-logo {
+  width: 80px;
+  height: 60px;
+  object-fit: contain;
+  background: #0b1625;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.card-body { flex: 1; }
+.price { font-size: 18px; font-weight: bold; color: var(--accent); }
+
+.card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.btn.primary {
+  background: linear-gradient(45deg, var(--primary), var(--accent));
+  color: #042022;
+  border: none;
+}
+.btn.danger {
+  color: var(--danger);
+  border-color: rgba(255,0,0,0.15);
+}
+
+/* Grid */
+.grid .card { width: calc(33.33% - 16px); }
+
+/* Plan Details */
+.detail {
+  display: flex;
+  gap: 20px;
+}
+.detail-logo {
+  width: 200px;
+  height: 140px;
+  object-fit: contain;
+  background: #0b1625;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+/* Cart */
+.cart-list { display: flex; flex-direction: column; gap: 12px; }
+.cart-item {
+  display: flex; gap: 12px; padding: 12px;
+  background: var(--card);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.cart-logo { width: 80px; background: #0b1625; padding: 6px; border-radius: 8px; }
+
+/* Payment */
+.qr-wrap { text-align: center; }
+.qr-img { width: 220px; border-radius: 8px; }
+
+/* Form */
+.input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 10px;
+}
+
+/* Flash */
+.flash {
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.flash.success { background: rgba(0,200,150,0.15); }
+.flash.danger { background: rgba(200,50,50,0.15); }
+
+/* Footer */
+.footer {
+  margin-top: 40px;
+  padding: 20px 0;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  color: var(--muted);
+  text-align: center;
+}
