@@ -2,49 +2,24 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<h2>Admin Dashboard</h2>
-
-<h3>All Plans</h3>
+<h2 class="heading">Admin Dashboard</h2>
 
 <table class="admin-table">
     <tr>
         <th>ID</th>
         <th>Name</th>
-        <th>Logo</th>
         <th>Price</th>
-        <th>Available</th>
-        <th>Action</th>
+        <th>Stock</th>
     </tr>
 
     {% for p in plans %}
     <tr>
         <td>{{ p.id }}</td>
         <td>{{ p.name }}</td>
-        <td><img src="{{ url_for('static', filename='img/' ~ p.logo) }}" width="60"></td>
         <td>₹{{ p.price }}</td>
-        <td>{{ p.available }}</td>
-        <td>
-            <form method="POST" action="{{ url_for('admin_delete_plan', plan_id=p.id) }}">
-                <button class="btn danger">Delete</button>
-            </form>
-        </td>
+        <td>{{ p.stock }}</td>
     </tr>
     {% endfor %}
 </table>
-
-<hr>
-
-<h3>Add New Plan</h3>
-
-<form method="POST" action="{{ url_for('admin_add_plan') }}" class="admin-form">
-
-    <input name="name" placeholder="Plan Name" required>
-    <input name="price" placeholder="Price" required>
-    <input name="logo" placeholder="Logo file name (e.g. netflix.png)" required>
-    <input name="available" placeholder="Available Qty" required>
-    <textarea name="desc" placeholder="Description"></textarea>
-
-    <button class="btn primary">Add Plan</button>
-</form>
 
 {% endblock %}
