@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Payment{% endblock %}
+
+{% block content %}
+<h2 class="page-heading">Complete Payment</h2>
+
+<p>Please scan the QR code below and pay the total amount.</p>
+
+<div style="text-align:center; margin-top:20px;">
+    <img src="{{ url_for('static', filename='qr.png') }}" class="qr-img" style="width:240px; border-radius:12px;">
+</div>
+
+<h3 style="margin-top:30px;">Enter UTR / Transaction ID</h3>
+
+<form action="{{ url_for('submit_utr') }}" method="POST" class="utr-form">
+    <input 
+        type="text" 
+        name="utr"
+        placeholder="Enter UTR / Transaction ID"
+        required 
+        class="input-box"
+        style="padding:12px; width:100%; max-width:320px; border-radius:10px; border:1px solid #444;"
+    >
+
+    <button 
+        type="submit" 
+        class="btn-primary" 
+        style="margin-top:14px;"
+    >
+        Submit Payment
+    </button>
+</form>
+
+<p style="margin-top:20px;" class="muted">
+    Once submitted, your payment will be manually verified.
+</p>
+{% endblock %}
