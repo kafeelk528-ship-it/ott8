@@ -2,10 +2,10 @@
 {% block title %}Success{% endblock %}
 
 {% block content %}
-<div class="success-box">
-    <h1>Payment Submitted</h1>
-    <p>Your UTR has been sent for verification.</p>
-    <p>You will get your plan soon by email.</p>
-    <a href="/" class="btn">Back to Home</a>
-</div>
+<h2 class="page-heading">Payment Submitted</h2>
+
+<p>Your payment is under verification.</p>
+<p>You will receive your plan shortly.</p>
+
+<a href="{{ url_for('home') }}" class="btn-primary">Return Home</a>
 {% endblock %}
