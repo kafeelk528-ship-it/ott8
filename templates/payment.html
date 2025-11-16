@@ -1,20 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Payment{% endblock %}
+
 {% block content %}
-<h1 class="page-title">Payment</h1>
+<h2 class="heading">Complete Your Payment</h2>
 
-<p>Please scan the QR code below to pay the total amount.</p>
-<div class="qr-wrap">
-  <img src="{{ url_for('static', filename='img/qr.png') }}" alt="QR" class="qr-img">
+<div class="payment-box">
+    <img src="{{ url_for('static', filename='images/qr.png') }}" class="qr-img">
+
+    <h3>Scan & Pay</h3>
+    <p>After payment, enter UTR number below:</p>
+
+    <form action="/submit_utr" method="POST" class="utr-form">
+        <input type="text" name="name" placeholder="Your Name" required>
+        <input type="text" name="phone" placeholder="Phone Number" required>
+        <input type="text" name="utr" placeholder="Enter UTR Number" required>
+
+        <button type="submit" class="btn">Submit UTR</button>
+    </form>
 </div>
-
-<form action="{{ url_for('submit_utr') }}" method="POST" class="utr-form">
-  <label>Enter UTR / Transaction ID</label>
-  <input name="utr" required placeholder="UTR / Transaction ID" class="input">
-  <label>Your name (optional)</label>
-  <input name="name" placeholder="Name (optional)" class="input">
-  <label>Your email (optional)</label>
-  <input name="email" placeholder="Email (optional)" class="input">
-  <button class="btn primary" type="submit">Submit UTR for verification</button>
-</form>
 {% endblock %}
