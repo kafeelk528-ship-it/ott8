@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Success{% endblock %}
+
 {% block content %}
-<h1 class="page-title">Submission Received</h1>
-<p>Thank you — your UTR has been submitted and will be verified. You will receive confirmation once approved.</p>
-<a class="btn" href="{{ url_for('home') }}">Return Home</a>
+<div class="success-box">
+    <h2>Payment Submitted Successfully</h2>
+    <p>We have received your details. You will receive your plan shortly.</p>
+
+    <a href="/" class="btn">Back to Home</a>
+</div>
 {% endblock %}
