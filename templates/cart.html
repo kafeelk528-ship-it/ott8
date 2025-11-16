@@ -1,15 +1,33 @@
-{% raw %}
 {% extends "base.html" %}
+{% block title %}Cart{% endblock %}
 {% block content %}
-<h2>Payment</h2>
+<h1 class="page-title">Your Cart</h1>
 
-<img src="{{ url_for('static', filename='img/qr.png') }}" class="qr">
+{% if cart|length == 0 %}
+  <p>Your cart is empty. <a href="{{ url_for('plans_page') }}">Browse plans</a>.</p>
+{% else %}
+  <div class="cart-list">
+    {% for item in cart %}
+      <div class="cart-item">
+        <img src="{{ url_for('static', filename=item.logo) }}" class="cart-logo" alt="{{ item.name }}">
+        <div class="cart-info">
+          <h3>{{ item.name }}</h3>
+          <p class="muted">{{ item.desc }}</p>
+          <div class="meta">
+            <span class="price">₹{{ item.price }}</span>
+            <span class="stock">Available: {{ item.available }}</span>
+          </div>
+        </div>
+        <div class="cart-actions">
+          <a class="btn danger" href="{{ url_for('remove_cart', plan_id=item.id) }}">Remove</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
 
-<form method="post" action="/submit-utr">
-    <input name="name" placeholder="Your Name">
-    <input name="utr" placeholder="Enter UTR Number">
-    <button type="submit">Submit Payment</button>
-</form>
-
+  <div class="checkout-row">
+    <div>Total: <strong>₹{{ total }}</strong></div>
+    <div><a class="btn primary" href="{{ url_for('payment_page') }}">Proceed to Payment</a></div>
+  </div>
+{% endif %}
 {% endblock %}
-{% endraw %}
