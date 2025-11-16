@@ -1,92 +1,27 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>{% block title %}OTT Store{% endblock %}</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <!-- Embedded critical CSS to avoid missing static file issues -->
-  <style>
-    :root{
-      --bg:#0f1115;--card:#0f1318;--muted:#9aa3b2;--accent:#7c5cff;--accent-2:#ff7a7a;
-      --border: rgba(255,255,255,0.04);--text: #e6eef8;--glass: rgba(255,255,255,0.02);
-      --radius:12px;--shadow:0 6px 18px rgba(0,0,0,0.6)
-    }
-    *{box-sizing:border-box}html,body{height:100%}body{
-      margin:0;background:linear-gradient(180deg,#090a0c 0%,#0f1115 100%);
-      color:var(--text);font-family:Inter,system-ui,Roboto,Arial;line-height:1.45;font-size:16px;
-      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
-    }
-    .navbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);position:sticky;top:0;z-index:50}
-    .logo{color:var(--text);font-weight:700;text-decoration:none;font-size:18px}
-    .nav-right{display:flex;gap:12px;align-items:center}
-    .nav-right a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:8px}
-    .nav-right a:hover{color:var(--text);background:var(--glass)}
-    main{max-width:1200px;margin:28px auto;padding:0 18px}
-    .page-title{font-size:24px;margin:8px 0 18px 0;color:var(--text)}
-    .plans-grid{display:grid;grid-template-columns: repeat(auto-fit, minmax(220px,1fr));gap:18px}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid var(--border);
-      padding:18px;border-radius:var(--radius);box-shadow:var(--shadow);transition:transform .18s ease}
-    .card:hover{transform:translateY(-6px)}
-    .logo-img{width:100%;max-height:92px;object-fit:contain;display:block;margin-bottom:10px}
-    .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.04);
-      color:var(--text);text-decoration:none;font-weight:600;cursor:pointer}
-    .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:0;box-shadow:0 8px 28px rgba(124,92,255,0.18)}
-    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
-    .details-box{display:flex;gap:18px;align-items:flex-start;padding:18px;border-radius:12px;border:1px solid var(--border)}
-    .details-logo{max-width:180px}
-    .cart-table{width:100%;border-collapse:collapse;margin-bottom:12px}
-    .cart-table th,.cart-table td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,0.02);text-align:left}
-    .muted{color:var(--muted);font-size:13px}
-    .qr-img{width:220px;height:220px;border-radius:8px;border:1px solid var(--border);display:block;margin:12px auto}
-    .success-box{background:linear-gradient(180deg, rgba(57,217,138,0.06), rgba(57,217,138,0.02));border:1px solid rgba(57,217,138,0.06);
-      padding:28px;border-radius:14px;text-align:center}
-    footer{margin:36px auto 60px;max-width:1200px;padding:0 18px;color:var(--muted);font-size:14px}
-    .input, input[type="text"], input[type="password"], input[type="email"], textarea{
-      width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);margin-bottom:8px}
-    @media (max-width:900px){.details-box{flex-direction:column;align-items:center;text-align:center}.nav-right{display:none}}
-  </style>
-
-  {% block head %}{% endblock %}
+    <meta charset="UTF-8">
+    <title>{% block title %}OTT Store{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <nav class="navbar">
-    <div class="nav-left">
-      <a href="/" class="logo">OTT Store</a>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="{{ url_for('home') }}" class="logo">OTT Store</a>
+
+    <div class="nav-links">
+        <a href="{{ url_for('plans_page') }}">Plans</a>
+        <a href="{{ url_for('cart_page') }}">Cart ({{ session.get('cart', [])|length }})</a>
+        <a href="{{ url_for('contact_page') }}">Contact</a>
+        <a href="{{ url_for('admin_login') }}">Admin</a>
     </div>
+</nav>
 
-    <div class="nav-right">
-      <a href="{{ url_for('plans_page') }}">Plans</a>
-      <a href="{{ url_for('cart_page') }}">Cart ({{ session.get('cart', [])|length }})</a>
-      <a href="{{ url_for('contact_page') }}">Contact</a>
-      <a href="{{ url_for('admin_login') }}">Admin</a>
-    </div>
-  </nav>
-
-  <main>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div style="max-width:1200px;margin:12px auto;padding:0 18px;">
-          {% for category, msg in messages %}
-            <div style="margin-bottom:8px;padding:10px;border-radius:10px;
-                        background: rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);">
-              <strong style="color:var(--muted);text-transform:capitalize">{{ category }}</strong> — {{ msg }}
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
+<div class="container">
     {% block content %}{% endblock %}
-  </main>
+</div>
 
-  <footer>
-    <div style="max-width:1200px;margin:0 auto;padding:0 18px;display:flex;justify-content:space-between;align-items:center">
-      <div>© 2025 OTT Store</div>
-      <div><a href="/">Home</a> · <a href="{{ url_for('plans_page') }}">Plans</a> · <a href="{{ url_for('contact_page') }}">Contact</a></div>
-    </div>
-  </footer>
-
-  {% block scripts %}{% endblock %}
 </body>
 </html>
