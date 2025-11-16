@@ -1,33 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Your Cart{% endblock %}
-
+{% block title %}Cart{% endblock %}
 {% block content %}
-<h2 class="page-heading">Your Cart</h2>
+<h1 class="page-title">Your Cart</h1>
 
 {% if cart|length == 0 %}
-<p>No items in cart.</p>
-<a href="{{ url_for('plans_page') }}" class="btn-primary">Browse Plans</a>
+  <p>Your cart is empty. <a href="{{ url_for('plans_page') }}">Browse plans</a>.</p>
 {% else %}
-
-<div class="cart-list">
+  <div class="cart-list">
     {% for item in cart %}
-    <div class="cart-item">
+      <div class="cart-item">
         <img src="{{ url_for('static', filename=item.logo) }}" class="cart-logo">
-
         <div class="cart-info">
-            <h3>{{ item.name }}</h3>
-            <p>{{ item.desc }}</p>
-            <p class="price">₹{{ item.price }}</p>
+          <h3>{{ item.name }}</h3>
+          <p class="muted">{{ item.desc }}</p>
+          <div class="meta">
+            <span class="price">₹{{ item.price }}</span>
+            <span class="stock">Available: {{ item.available }}</span>
+          </div>
         </div>
-
-        <a href="{{ url_for('remove_cart', plan_id=item.id) }}" class="remove-btn">Remove</a>
-    </div>
+        <div class="cart-actions">
+          <a class="btn danger" href="{{ url_for('remove_cart', plan_id=item.id) }}">Remove</a>
+        </div>
+      </div>
     {% endfor %}
-</div>
+  </div>
 
-<h3>Total: ₹{{ total }}</h3>
-
-<a href="{{ url_for('payment_page') }}" class="btn-primary">Proceed to Payment</a>
-
+  <div class="checkout-row">
+    <div>Total: <strong>₹{{ total }}</strong></div>
+    <div><a class="btn primary" href="{{ url_for('payment_page') }}">Proceed to Payment</a></div>
+  </div>
 {% endif %}
 {% endblock %}
