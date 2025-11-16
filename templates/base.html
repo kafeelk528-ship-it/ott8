@@ -1,42 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>{% block title %}OTT Store{% endblock %}</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <header class="nav">
-    <div class="container nav-inner">
-      <a class="brand" href="{{ url_for('home') }}">OTT Store</a>
-      <nav class="links">
-        <a href="{{ url_for('plans_page') }}" class="nav-link">Plans</a>
-        <a href="{{ url_for('cart_page') }}" class="nav-link">Cart ({{ session.get('cart', [])|length }})</a>
-        <a href="{{ url_for('contact_page') }}" class="nav-link">Contact</a>
-        <a href="{{ url_for('admin_login') }}" class="nav-link">Admin</a>
-      </nav>
-    </div>
-  </header>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OTT Store{% endblock %}</title>
 
-  <main class="container page">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-wrap">
-          {% for category, msg in messages %}
-            <div class="flash {{ category }}">{{ msg }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<header class="navbar">
+    <div class="nav-left">
+        <img src="{{ url_for('static', filename='images/logo-light.png') }}" class="logo">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/plans" class="nav-link">Plans</a>
+        <a href="/contact" class="nav-link">Contact</a>
+    </div>
+
+    <div class="nav-right">
+        <a href="/cart" class="cart-btn">
+            🛒 Cart ({{ session.get('cart', [])|length }})
+        </a>
+    </div>
+</header>
+
+<main>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-box">{{ messages[0] }}</div>
+        {% endif %}
     {% endwith %}
 
     {% block content %}{% endblock %}
-  </main>
+</main>
 
-  <footer class="footer">
-    <div class="container">
-      <small>© OTT Store — Demo</small>
-    </div>
-  </footer>
+<footer>
+    <p>© 2025 OTT Store</p>
+</footer>
+
 </body>
 </html>
