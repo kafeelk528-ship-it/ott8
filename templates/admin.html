@@ -1,12 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Admin Login{% endblock %}
+
 {% block content %}
-<h1 class="page-title">Admin Login</h1>
-<form method="POST" class="admin-form">
-  <label>Username</label>
-  <input name="username" class="input" required>
-  <label>Password</label>
-  <input name="password" type="password" class="input" required>
-  <button class="btn primary" type="submit">Login</button>
+<h2 class="heading">Admin Login</h2>
+
+<form action="/admin" method="POST" class="admin-form">
+    <input type="text" name="username" placeholder="Admin Username" required>
+    <input type="password" name="password" placeholder="Password" required>
+
+    {% if error %}
+    <p class="error">Invalid username or password!</p>
+    {% endif %}
+
+    <button class="btn">Login</button>
 </form>
 {% endblock %}
