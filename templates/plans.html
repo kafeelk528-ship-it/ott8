@@ -1,20 +1,24 @@
 {% extends "base.html" %}
-
 {% block title %}All Plans{% endblock %}
 
 {% block content %}
-<h1 class="page-title">All OTT Plans</h1>
+<h2 class="page-heading">All OTT Plans</h2>
 
-<div class="plans-grid">
-{% for p in plans %}
-    <div class="card">
-        <img src="{{ url_for('static', filename='img/' + p.logo) }}" class="logo-img">
+<div class="plan-grid">
+    {% for p in plans %}
+    <div class="plan-card">
+        <img src="{{ url_for('static', filename=p.logo) }}" class="plan-logo">
+
         <h3>{{ p.name }}</h3>
         <p>{{ p.desc }}</p>
-        <p><b>₹{{ p.price }}</b></p>
-        <p class="stock">Available: {{ p.stock }}</p>
-        <a class="btn" href="{{ url_for('plan_details', plan_id=p.id) }}">Details</a>
+        <p class="price">₹{{ p.price }}</p>
+
+        <div class="btn-group">
+            <a href="{{ url_for('plan_details', plan_id=p.id) }}" class="btn-outline">Details</a>
+            <a href="{{ url_for('add_to_cart', plan_id=p.id) }}" class="btn-primary">Add to Cart</a>
+        </div>
     </div>
-{% endfor %}
+    {% endfor %}
 </div>
+
 {% endblock %}
