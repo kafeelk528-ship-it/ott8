@@ -1,15 +1,20 @@
 {% extends "base.html" %}
-{% block title %}{{ plan.name }}{% endblock %}
+{% block title %}{{ plan.name }} Details{% endblock %}
 
 {% block content %}
+
 <div class="details-box">
-    <img src="{{ url_for('static', filename='img/' + plan.logo) }}" class="details-logo">
-    <h1>{{ plan.name }}</h1>
+    <img src="{{ url_for('static', filename=plan.logo) }}" class="details-logo">
+
+    <h2>{{ plan.name }}</h2>
     <p>{{ plan.desc }}</p>
 
-    <h2>Price: ₹{{ plan.price }}</h2>
-    <p class="stock">Available: {{ plan.stock }}</p>
+    <h3>Price: ₹{{ plan.price }}</h3>
 
-    <a class="btn primary" href="{{ url_for('add_to_cart', plan_id=plan.id) }}">Add to Cart</a>
+    <div class="btn-group">
+        <a href="{{ url_for('add_to_cart', plan_id=plan.id) }}" class="btn-primary">Add to Cart</a>
+        <a href="{{ url_for('plans_page') }}" class="btn-outline">Back</a>
+    </div>
 </div>
+
 {% endblock %}
