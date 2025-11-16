@@ -1,43 +1,50 @@
 {% extends "base.html" %}
 {% block title %}Admin Dashboard{% endblock %}
+
 {% block content %}
-<h1 class="page-title">Admin Dashboard</h1>
+<h2>Admin Dashboard</h2>
 
-<h3>Add new plan</h3>
-<form method="POST" action="{{ url_for('admin_add_plan') }}" class="admin-form">
-  <input name="name" placeholder="Name" class="input" required>
-  <input name="logo" placeholder="logo filename (eg. img/netflix.png)" class="input">
-  <input name="price" placeholder="Price" class="input">
-  <input name="available" placeholder="Available" class="input">
-  <input name="desc" placeholder="Short description" class="input">
-  <button class="btn" type="submit">Add Plan</button>
-</form>
+<h3>All Plans</h3>
 
-<h3>Existing plans</h3>
 <table class="admin-table">
-<thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Available</th><th>Actions</th></tr></thead>
-<tbody>
-  {% for p in plans %}
-  <tr>
-    <td>{{ p.id }}</td>
-    <td>{{ p.name }}</td>
-    <td>₹{{ p.price }}</td>
-    <td>{{ p.available }}</td>
-    <td>
-      <form style="display:inline" method="POST" action="{{ url_for('admin_update_plan', plan_id=p.id) }}">
-        <input name="name" value="{{ p.name }}" class="small">
-        <input name="price" value="{{ p.price }}" class="small">
-        <input name="available" value="{{ p.available }}" class="small">
-        <button class="btn" type="submit">Update</button>
-      </form>
-      <form style="display:inline" method="POST" action="{{ url_for('admin_delete_plan', plan_id=p.id) }}">
-        <button class="btn danger" type="submit" onclick="return confirm('Delete plan?')">Delete</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</tbody>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Logo</th>
+        <th>Price</th>
+        <th>Available</th>
+        <th>Action</th>
+    </tr>
+
+    {% for p in plans %}
+    <tr>
+        <td>{{ p.id }}</td>
+        <td>{{ p.name }}</td>
+        <td><img src="{{ url_for('static', filename='img/' ~ p.logo) }}" width="60"></td>
+        <td>₹{{ p.price }}</td>
+        <td>{{ p.available }}</td>
+        <td>
+            <form method="POST" action="{{ url_for('admin_delete_plan', plan_id=p.id) }}">
+                <button class="btn danger">Delete</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
 </table>
 
-<a class="btn" href="{{ url_for('admin_logout') }}">Logout</a>
+<hr>
+
+<h3>Add New Plan</h3>
+
+<form method="POST" action="{{ url_for('admin_add_plan') }}" class="admin-form">
+
+    <input name="name" placeholder="Plan Name" required>
+    <input name="price" placeholder="Price" required>
+    <input name="logo" placeholder="Logo file name (e.g. netflix.png)" required>
+    <input name="available" placeholder="Available Qty" required>
+    <textarea name="desc" placeholder="Description"></textarea>
+
+    <button class="btn primary">Add Plan</button>
+</form>
+
 {% endblock %}
