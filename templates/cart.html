@@ -1,33 +1,30 @@
 {% extends "base.html" %}
-{% block title %}Cart{% endblock %}
+{% block title %}Your Cart{% endblock %}
+
 {% block content %}
-<h1 class="page-title">Your Cart</h1>
+<h2 class="heading">Your Cart</h2>
 
-{% if cart|length == 0 %}
-  <p>Your cart is empty. <a href="{{ url_for('plans_page') }}">Browse plans</a>.</p>
-{% else %}
-  <div class="cart-list">
+{% if cart %}
     {% for item in cart %}
-      <div class="cart-item">
-        <img src="{{ url_for('static', filename=item.logo) }}" class="cart-logo" alt="{{ item.name }}">
-        <div class="cart-info">
-          <h3>{{ item.name }}</h3>
-          <p class="muted">{{ item.desc }}</p>
-          <div class="meta">
-            <span class="price">₹{{ item.price }}</span>
-            <span class="stock">Available: {{ item.available }}</span>
-          </div>
-        </div>
-        <div class="cart-actions">
-          <a class="btn danger" href="{{ url_for('remove_cart', plan_id=item.id) }}">Remove</a>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
+    <div class="cart-card">
+        <img src="{{ url_for('static', filename='images/' + item.logo) }}" class="cart-logo">
 
-  <div class="checkout-row">
-    <div>Total: <strong>₹{{ total }}</strong></div>
-    <div><a class="btn primary" href="{{ url_for('payment_page') }}">Proceed to Payment</a></div>
-  </div>
+        <div class="cart-info">
+            <h3>{{ item.name }}</h3>
+            <p>{{ item.desc }}</p>
+            <p class="price">₹{{ item.price }}</p>
+            <p>Available: {{ item.stock }}</p>
+        </div>
+
+        <a href="/remove/{{ item.id }}" class="remove-btn">Remove</a>
+    </div>
+    {% endfor %}
+
+    <h3 class="total">Total: ₹{{ total }}</h3>
+
+    <a href="/payment" class="btn pay-btn">Proceed to Payment</a>
+
+{% else %}
+    <p>Your cart is empty.</p>
 {% endif %}
 {% endblock %}
