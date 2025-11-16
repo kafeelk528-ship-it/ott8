@@ -1,24 +1,25 @@
 {% extends "base.html" %}
 {% block title %}All Plans{% endblock %}
-
 {% block content %}
-<h2 class="page-heading">All OTT Plans</h2>
+<h1 class="page-title">All Plans</h1>
 
-<div class="plan-grid">
-    {% for p in plans %}
-    <div class="plan-card">
-        <img src="{{ url_for('static', filename=p.logo) }}" class="plan-logo">
-
+<div class="cards grid">
+  {% for p in plans %}
+    <article class="card">
+      <img class="card-logo" src="{{ url_for('static', filename=p.logo) }}" alt="">
+      <div class="card-body">
         <h3>{{ p.name }}</h3>
-        <p>{{ p.desc }}</p>
-        <p class="price">₹{{ p.price }}</p>
-
-        <div class="btn-group">
-            <a href="{{ url_for('plan_details', plan_id=p.id) }}" class="btn-outline">Details</a>
-            <a href="{{ url_for('add_to_cart', plan_id=p.id) }}" class="btn-primary">Add to Cart</a>
+        <p class="muted">{{ p.desc }}</p>
+        <div class="meta">
+          <span class="price">₹{{ p.price }}</span>
+          <span class="stock">Available: {{ p.available }}</span>
         </div>
-    </div>
-    {% endfor %}
+        <div class="card-actions">
+          <a class="btn" href="{{ url_for('plan_details', plan_id=p.id) }}">Details</a>
+          <a class="btn primary" href="{{ url_for('add_to_cart', plan_id=p.id) }}">Add to Cart</a>
+        </div>
+      </div>
+    </article>
+  {% endfor %}
 </div>
-
 {% endblock %}
