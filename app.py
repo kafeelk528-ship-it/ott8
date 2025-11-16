@@ -1,208 +1,220 @@
-# app.py - fixed for ott8 (uses static/img/* and stable templates)
+from flask import (
+    Flask, render_template, redirect, url_for,
+    request, session, flash
+)
 import os
-import json
 import requests
-from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, request, session, flash, abort
-from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "dev_secret_key")
 
-# Telegram
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+# -------------------------------
+# ENVIRONMENT VARIABLES
+# -------------------------------
+app.secret_key = os.environ.get("SECRET_KEY", "dev123")
 
-# Data (in-memory). Keep editable in admin (persisting optional)
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+
+# -------------------------------
+# PRODUCTS (IN-MEMORY DATABASE)
+# -------------------------------
 PLANS = [
-    {"id": 1, "name": "Netflix Premium", "price": 199, "logo": "img/netflix.png", "desc": "4K UHD • 4 Screens • 30 Days", "available": 10},
-    {"id": 2, "name": "Amazon Prime Video", "price": 149, "logo": "img/prime.png", "desc": "Full HD • All Devices • 30 Days", "available": 12},
-    {"id": 3, "name": "Disney+ Hotstar", "price": 299, "logo": "img/hotstar.png", "desc": "Sports + Movies + Web Series", "available": 5},
-    {"id": 4, "name": "Sony LIV Premium", "price": 129, "logo": "img/sonyliv.png", "desc": "Full HD • Originals • TV Shows", "available": 9},
+    {
+        "id": 1,
+        "name": "Netflix Premium",
+        "price": 199,
+        "logo": "netflix.png",
+        "available": 10,
+        "desc": "4K UHD • 30 Days"
+    },
+    {
+        "id": 2,
+        "name": "Amazon Prime Video",
+        "price": 149,
+        "logo": "prime.png",
+        "available": 8,
+        "desc": "All Devices • 30 Days"
+    },
+    {
+        "id": 3,
+        "name": "Disney+ Hotstar",
+        "price": 299,
+        "logo": "hotstar.png",
+        "available": 12,
+        "desc": "Movies + Sports + Web Series"
+    }
 ]
 
+
+# -------------------------------
+# AUTH HELPERS
+# -------------------------------
 def admin_required(f):
+    from functools import wraps
     @wraps(f)
-    def wrapped(*args, **kwargs):
+    def secure(*args, **kwargs):
         if not session.get("admin"):
-            return redirect(url_for("admin_login", next=request.path))
+            return redirect("/admin")
         return f(*args, **kwargs)
-    return wrapped
+    return secure
 
-def get_plan(pid):
-    return next((p for p in PLANS if int(p["id"]) == int(pid)), None)
 
-def send_telegram(text: str):
-    token = TELEGRAM_BOT_TOKEN
-    chat = TELEGRAM_CHAT_ID
-    if not token or not chat:
-        app.logger.debug("Telegram not configured")
-        return False
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    try:
-        r = requests.post(url, json={"chat_id": chat, "text": text, "parse_mode": "Markdown"})
-        r.raise_for_status()
-        return r.json().get("ok", False)
-    except Exception as e:
-        app.logger.exception("Telegram send failed: %s", e)
-        return False
-
-# ----- Public routes -----
+# -------------------------------
+# ROUTES - PUBLIC
+# -------------------------------
 @app.route("/")
 def home():
     return render_template("index.html", plans=PLANS)
+
 
 @app.route("/plans")
 def plans_page():
     return render_template("plans.html", plans=PLANS)
 
+
 @app.route("/plan/<int:plan_id>")
 def plan_details(plan_id):
-    plan = get_plan(plan_id)
+    plan = next((p for p in PLANS if p["id"] == plan_id), None)
     if not plan:
-        abort(404)
+        return "Plan Not Found", 404
     return render_template("plan-details.html", plan=plan)
 
-# ----- Cart -----
+
+# -------------------------------
+# CART SYSTEM
+# -------------------------------
 @app.route("/add-to-cart/<int:plan_id>")
 def add_to_cart(plan_id):
-    plan = get_plan(plan_id)
-    if not plan:
-        flash("Invalid product", "danger")
-        return redirect(url_for("plans_page"))
-    if plan.get("available", 0) <= 0:
-        flash("Product not available", "danger")
-        return redirect(url_for("plans_page"))
-    cart = session.get("cart", [])
-    if plan_id not in cart:
-        cart.append(plan_id)
-        session["cart"] = cart
-        session.modified = True
-        flash("Added to cart", "success")
-    else:
-        flash("Already in cart", "info")
-    return redirect(url_for("cart_page"))
+    session.setdefault("cart", [])
+    if plan_id not in session["cart"]:
+        session["cart"].append(plan_id)
+    session.modified = True
+    return redirect("/cart")
+
 
 @app.route("/cart")
 def cart_page():
-    cart_items = [get_plan(pid) for pid in session.get("cart", [])]
-    cart_items = [c for c in cart_items if c]
-    total = sum(int(i["price"]) for i in cart_items)
+    cart_ids = session.get("cart", [])
+    cart_items = [p for p in PLANS if p["id"] in cart_ids]
+    total = sum(p["price"] for p in cart_items)
     return render_template("cart.html", cart=cart_items, total=total)
 
+
 @app.route("/cart/remove/<int:plan_id>")
-def remove_cart(plan_id):
-    cart = session.get("cart", [])
-    if plan_id in cart:
-        cart.remove(plan_id)
-        session["cart"] = cart
+def remove_item(plan_id):
+    if "cart" in session and plan_id in session["cart"]:
+        session["cart"].remove(plan_id)
         session.modified = True
-        flash("Removed from cart", "info")
-    return redirect(url_for("cart_page"))
+    return redirect("/cart")
 
-# ----- Payment / UTR submit -----
-@app.route("/payment")
-def payment_page():
-    cart_items = [get_plan(pid) for pid in session.get("cart", [])]
-    cart_items = [c for c in cart_items if c]
-    if not cart_items:
-        flash("Cart is empty", "info")
-        return redirect(url_for("plans_page"))
-    total = sum(int(i["price"]) for i in cart_items)
-    return render_template("payment.html", cart=cart_items, total=total)
 
-@app.route("/submit_utr", methods=["POST"])
+# -------------------------------
+# PAYMENT PAGE + UTR SUBMISSION
+# -------------------------------
+@app.route("/checkout")
+def checkout():
+    cart_ids = session.get("cart", [])
+    cart_items = [p for p in PLANS if p["id"] in cart_ids]
+    total = sum(p["price"] for p in cart_items)
+
+    if total == 0:
+        return redirect("/cart")
+
+    return render_template("payment.html", total=total)
+
+
+@app.route("/submit-utr", methods=["POST"])
 def submit_utr():
-    utr = (request.form.get("utr") or "").strip()
-    name = (request.form.get("name") or "").strip()
-    email = (request.form.get("email") or "").strip()
-    cart_items = [get_plan(pid) for pid in session.get("cart", [])]
-    cart_items = [c for c in cart_items if c]
-    if not utr:
-        flash("Enter UTR", "danger")
-        return redirect(url_for("payment_page"))
-    total = sum(int(i["price"]) for i in cart_items)
-    items = ", ".join([i["name"] for i in cart_items])
-    text = f"*New Payment*\nName: {name or '-'}\nEmail: {email or '-'}\nAmount: ₹{total}\nUTR: `{utr}`\nItems: {items}\nTime: {datetime.utcnow().isoformat()} UTC"
-    send_telegram(text)
-    # save submission locally (append json)
-    try:
-        subs_file = os.path.join(os.path.dirname(__file__), "submissions.json")
-        existing = []
-        if os.path.exists(subs_file):
-            with open(subs_file, "r", encoding="utf-8") as fh:
-                existing = json.load(fh) or []
-        existing.append({"utr": utr, "name": name, "email": email, "items": cart_items, "total": total, "time": datetime.utcnow().isoformat()})
-        with open(subs_file, "w", encoding="utf-8") as fh:
-            json.dump(existing, fh, indent=2, ensure_ascii=False)
-    except Exception:
-        app.logger.exception("Failed to save submission")
-    # clear cart
+    utr = request.form.get("utr")
+    email = request.form.get("email")
+    amount = request.form.get("amount")
+
+    if not utr or not email:
+        flash("Please enter UTR and Email", "danger")
+        return redirect("/checkout")
+
+    # Telegram message
+    msg = f"""
+📢 *New Payment Request*
+-------------------------
+💰 Amount: ₹{amount}
+🔢 UTR Number: {utr}
+📧 Email: {email}
+🛒 Customer wants activation ✔️
+"""
+
+    if TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
+        try:
+            requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+                         params={
+                             "chat_id": TELEGRAM_CHAT_ID,
+                             "text": msg,
+                             "parse_mode": "Markdown"
+                         })
+        except:
+            pass
+
     session.pop("cart", None)
-    flash("UTR submitted. Owner will verify.", "success")
+
     return render_template("success.html")
 
-# ----- Contact -----
+
+# -------------------------------
+# CONTACT
+# -------------------------------
 @app.route("/contact")
 def contact_page():
     return render_template("contact.html")
 
-# ----- Admin (simple) -----
-@app.route("/admin", methods=["GET","POST"])
+
+# -------------------------------
+# ADMIN LOGIN
+# -------------------------------
+@app.route("/admin", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
-        if request.form.get("username") == os.getenv("ADMIN_USER", "admin") and request.form.get("password") == os.getenv("ADMIN_PASS", "12345"):
+        if request.form["username"] == os.environ.get("ADMIN_USER", "admin") \
+           and request.form["password"] == os.environ.get("ADMIN_PASS", "123"):
             session["admin"] = True
-            flash("Admin logged in", "success")
-            return redirect(url_for("admin_dashboard"))
-        flash("Invalid credentials", "danger")
+            return redirect("/admin/dashboard")
         return render_template("admin.html", error=True)
     return render_template("admin.html")
 
+
+# -------------------------------
+# ADMIN DASHBOARD
+# -------------------------------
 @app.route("/admin/dashboard")
 @admin_required
 def admin_dashboard():
     return render_template("dashboard.html", plans=PLANS)
 
-@app.route("/admin/plan/<int:plan_id>/update", methods=["POST"])
+
+@app.route("/admin/add-plan", methods=["POST"])
 @admin_required
-def admin_update_plan(plan_id):
-    p = get_plan(plan_id)
-    if not p:
-        flash("Plan not found", "danger")
-        return redirect(url_for("admin_dashboard"))
-    try:
-        p["price"] = int(request.form.get("price", p["price"]))
-    except:
-        pass
-    try:
-        p["available"] = int(request.form.get("available", p.get("available",0)))
-    except:
-        pass
-    # optional: update logo/name/desc
-    p["name"] = request.form.get("name", p["name"])
-    p["logo"] = request.form.get("logo", p["logo"])
-    p["desc"] = request.form.get("desc", p["desc"])
-    flash("Plan updated", "success")
-    return redirect(url_for("admin_dashboard"))
+def admin_add_plan():
+    new_id = max([p["id"] for p in PLANS]) + 1 if PLANS else 1
+    PLANS.append({
+        "id": new_id,
+        "name": request.form.get("name"),
+        "price": int(request.form.get("price")),
+        "logo": request.form.get("logo"),
+        "available": int(request.form.get("available")),
+        "desc": request.form.get("desc")
+    })
+    return redirect("/admin/dashboard")
 
-@app.route("/admin/logout")
-def admin_logout():
-    session.pop("admin", None)
-    flash("Logged out", "info")
-    return redirect(url_for("home"))
 
-# ----- Telegram debug -----
-@app.route("/_debug/telegram-test")
-def telegram_test():
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        return {"ok": False, "error": "telegram env missing"}, 400
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    r = requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": "Test message from ott app", "parse_mode": "Markdown"})
-    try:
-        return r.json()
-    except:
-        return {"status": r.status_code, "text": r.text}
+@app.route("/admin/delete-plan/<int:plan_id>", methods=["POST"])
+@admin_required
+def admin_delete_plan(plan_id):
+    global PLANS
+    PLANS = [p for p in PLANS if p["id"] != plan_id]
+    return redirect("/admin/dashboard")
 
+
+# -------------------------------
+# RUN
+# -------------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=(os.getenv("FLASK_ENV","")!="production"))
+    app.run(debug=True)
