@@ -1,23 +1,15 @@
 {% raw %}
 {% extends "base.html" %}
 {% block content %}
-<h2>Your Cart</h2>
+<h2>Payment</h2>
 
-{% for item in cart %}
-<div class="cart-item">
-    <img src="{{ url_for('static', filename=item.logo) }}">
-    <div>
-        <h3>{{ item.name }}</h3>
-        <p>{{ item.desc }}</p>
-        <p>₹{{ item.price }}</p>
-        <a href="/cart/remove/{{ item.id }}">Remove</a>
-    </div>
-</div>
-{% endfor %}
+<img src="{{ url_for('static', filename='img/qr.png') }}" class="qr">
 
-<p>Total: ₹{{ total }}</p>
-
-<a class="btn" href="/payment">Proceed to Payment</a>
+<form method="post" action="/submit-utr">
+    <input name="name" placeholder="Your Name">
+    <input name="utr" placeholder="Enter UTR Number">
+    <button type="submit">Submit Payment</button>
+</form>
 
 {% endblock %}
 {% endraw %}
