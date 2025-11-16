@@ -1,51 +1,44 @@
 {% extends "base.html" %}
 {% block title %}Admin Dashboard{% endblock %}
-
 {% block content %}
-<h1>Admin Dashboard</h1>
-
-<p><a class="btn" href="{{ url_for('admin_logout') }}">Logout</a></p>
-
-<div style="display:grid;grid-template-columns:1fr;gap:18px;">
-  {% for p in plans %}
-  <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:18px;">
-    <div style="display:flex;gap:12px;align-items:center;">
-      <img src="{{ url_for('static', filename='img/' + p.logo) }}" style="width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid rgba(255,255,255,0.03)" alt="{{ p.name }}">
-      <div>
-        <strong>{{ p.name }}</strong><br>
-        <span class="muted">ID: {{ p.id }}</span>
-      </div>
-    </div>
-
-    <div style="min-width:420px;">
-      <form method="post" action="{{ url_for('admin_update_plan', plan_id=p.id) }}" style="display:flex;gap:8px;align-items:center;">
-        <input name="name" value="{{ p.name }}" class="input" style="width:180px;" placeholder="Plan name">
-        <input name="price" value="{{ p.price }}" class="input" style="width:100px;" placeholder="Price">
-        <input name="stock" value="{{ p.stock }}" class="input" style="width:100px;" placeholder="Stock">
-        <input name="logo" value="{{ p.logo }}" class="input" style="width:160px;" placeholder="logo filename e.g. netflix.png">
-        <button class="btn primary" type="submit">Save</button>
-      </form>
-    </div>
-
-    <div>
-      <form method="post" action="{{ url_for('admin_delete_plan', plan_id=p.id) }}" onsubmit="return confirm('Delete this plan?');">
-        <button class="btn danger" type="submit">Delete</button>
-      </form>
-    </div>
-  </div>
-  {% endfor %}
-</div>
-
-<hr style="margin:18px 0">
+<h1 class="page-title">Admin Dashboard</h1>
 
 <h3>Add new plan</h3>
-<form method="post" action="{{ url_for('admin_add_plan') }}" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-  <input name="name" placeholder="Name" class="input" style="width:220px" required>
-  <input name="price" placeholder="Price" class="input" style="width:120px" required>
-  <input name="stock" placeholder="Stock" class="input" style="width:120px" required>
-  <input name="logo" placeholder="logo filename (img/..)" class="input" style="width:160px" required>
-  <input name="description" placeholder="Short desc" class="input" style="width:320px">
-  <button class="btn primary" type="submit">Add Plan</button>
+<form method="POST" action="{{ url_for('admin_add_plan') }}" class="admin-form">
+  <input name="name" placeholder="Name" class="input" required>
+  <input name="logo" placeholder="logo filename (eg. netflix.png)" class="input">
+  <input name="price" placeholder="Price" class="input">
+  <input name="available" placeholder="Available" class="input">
+  <input name="desc" placeholder="Short description" class="input">
+  <button class="btn" type="submit">Add Plan</button>
 </form>
 
+<h3>Existing plans</h3>
+<table class="admin-table">
+  <thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Available</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for p in plans %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>{{ p.name }}</td>
+      <td>₹{{ p.price }}</td>
+      <td>{{ p.available }}</td>
+      <td>
+        <form style="display:inline" method="POST" action="{{ url_for('admin_update_plan', plan_id=p.id) }}">
+          <input name="name" value="{{ p.name }}" placeholder="name" class="small">
+          <input name="price" value="{{ p.price }}" class="small">
+          <input name="available" value="{{ p.available }}" class="small">
+          <button class="btn" type="submit">Update</button>
+        </form>
+
+        <form style="display:inline" method="POST" action="{{ url_for('admin_delete_plan', plan_id=p.id) }}">
+          <button class="btn danger" type="submit" onclick="return confirm('Delete plan?')">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a class="btn" href="{{ url_for('admin_logout') }}">Logout</a>
 {% endblock %}
