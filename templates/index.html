@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Home — OTT Store{% endblock %}
+{% block title %}Plans{% endblock %}
 
 {% block content %}
-<h2 class="heading">Popular OTT Plans</h2>
+<h2 class="heading">All OTT Plans</h2>
 
 <div class="plan-container">
     {% for p in plans %}
@@ -11,7 +11,7 @@
         <h3>{{ p.name }}</h3>
         <p>{{ p.desc }}</p>
         <p class="price">₹{{ p.price }}</p>
-        <a href="/plan/{{ p.id }}" class="btn">View Details</a>
+        <a href="/plan/{{ p.id }}" class="btn">Details</a>
     </div>
     {% endfor %}
 </div>
